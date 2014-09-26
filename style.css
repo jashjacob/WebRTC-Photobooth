@@ -1,0 +1,54 @@
+body{
+    background-color: #FFC40A;
+    background-image:url('sides2x.png');
+   }
+  video {
+      border:2px solid black;
+      width:480px;
+      height:360px;
+  }
+  canvas {
+      border:5px solid black;
+      width:480px;
+      height:360px;
+  }
+  button {
+      
+      background: #72F0EB;
+      color: #fff;
+
+      padding: 8px 14px;
+  font-weight: bold;
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+
+  }  
+  .grayscale {
+    -webkit-filter: grayscale(1);
+  }
+  .sepia {
+    -webkit-filter: sepia(1);
+  }
+  .invert {
+    -webkit-filter: invert(1);
+  }
+  .blur {
+    -webkit-filter: blur(3px);
+
+  }
+  .colored
+  {
+      -webkit-filter: hue-rotate(180deg) saturate(200%);
+  }
+
+  .saturate{
+      -webkit-filter: saturate(10);
+  }
+
+  .fancy{
+      -webkit-filter: contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4);
+  }

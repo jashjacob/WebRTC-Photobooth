@@ -1,0 +1,66 @@
+  <!doctype html>
+  <html ng-app="webrtc+ajs">
+    <head>
+      <script src="angular.min.js"></script>
+      <script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.10.0.js"></script>
+      <script src="example.js"></script>
+      <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+
+    <body>
+
+    <div ng-controller="ProgressDemoCtrl">
+    <progressbar class="progress-striped active" value="dynamic" type="{{type}}">{{type}} </progressbar>
+
+    <center>
+    <h1> Photobooth </h1>
+    
+    <video id="vid" autoplay="true"></video>
+    <canvas id="cvs"></canvas>
+    <br>
+    <button id="btn1" class="btn btn-sm btn-primary" onclick="start()">Start</button>
+    <button id="btn2" class="btn btn-sm btn-primary" onclick="change()">Change Filter</button>
+    <button id="btn3" class="btn btn-sm btn-primary" onclick="snap()" ng-click="random()">Click</button>
+    </center>
+
+    <script>
+    filters = ["", "sepia", "invert", "blur", "grayscale","colored","saturate","fancy"];
+    findex = 0;
+    video = document.getElementById("vid");
+    canvas = document.getElementById("cvs");
+    canvas.width = 480;
+    canvas.height = 360; 
+
+    btn2.disabled = true;
+    btn3.disabled = true;
+
+    function start() {
+      navigator.webkitGetUserMedia({video:true}, gotStream, function() {}); 
+      btn1.disabled = true;
+    }
+
+    function gotStream(stream) {
+      video.src = webkitURL.createObjectURL(stream);
+      btn2.disabled = false;
+      btn3.disabled = false;
+    }
+
+    function change() {
+      video.className = '';
+      findex = (findex + 1) % filters.length;
+      if (findex != 0)
+        video.classList.add(filters[findex]);
+    }
+
+    function snap() {
+      canvas.className = '';
+      if (findex != 0)
+      canvas.classList.add(filters[findex]);
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    </script>
+   </div>
+   </body>
+</html>
