@@ -9,7 +9,6 @@
     </head>
 
     <body>
-
     <div ng-controller="ProgressDemoCtrl">
     <progressbar class="progress-striped active" value="dynamic" type="{{type}}">{{type}} </progressbar>
 
@@ -22,6 +21,8 @@
     <button id="btn1" class="btn btn-sm btn-primary" onclick="start()">Start</button>
     <button id="btn2" class="btn btn-sm btn-primary" onclick="change()">Change Filter</button>
     <button id="btn3" class="btn btn-sm btn-primary" onclick="snap()" ng-click="random()">Click</button>
+    <br>
+    <a id="download">Download Orignal</a>
     </center>
 
     <script>
@@ -59,6 +60,14 @@
       canvas.classList.add(filters[findex]);
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
     }
+
+ 	  function downloadCanvas(link, canvasId, filename) {
+    link.href = document.getElementById(canvasId).toDataURL();
+    link.download = filename;
+	   }
+
+	  document.getElementById('download').addEventListener('click', function() {
+    downloadCanvas(this, 'cvs', 'myPicture.png'); }, false);
 
     </script>
    </div>

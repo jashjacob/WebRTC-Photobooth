@@ -1,4 +1,4 @@
-body{
+  body{
     background-color: #FFC40A;
     background-image:url('sides2x.png');
    }
@@ -18,15 +18,18 @@ body{
       color: #fff;
 
       padding: 8px 14px;
-  font-weight: bold;
-  display: inline-block;
-  border: none;
-  cursor: pointer;
-  -moz-border-radius: 3px;
-  -webkit-border-radius: 3px;
-  border-radius: 3px;
+      font-weight: bold;
+      display: inline-block;
+      border: none;
+      cursor: pointer;
+      -moz-border-radius: 3px;
+      -webkit-border-radius: 3px;
+      border-radius: 3px;
+  } 
 
-  }  
+  #download{
+    font-size: 10px;
+  }
   .grayscale {
     -webkit-filter: grayscale(1);
   }
@@ -38,7 +41,6 @@ body{
   }
   .blur {
     -webkit-filter: blur(3px);
-
   }
   .colored
   {
