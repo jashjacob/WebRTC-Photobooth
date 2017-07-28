@@ -42,7 +42,7 @@
     }
 
     function gotStream(stream) {
-      video.src = webkitURL.createObjectURL(stream);
+      video.src = URL.createObjectURL(stream);
       btn2.disabled = false;
       btn3.disabled = false;
     }
