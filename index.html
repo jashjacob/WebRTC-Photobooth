@@ -22,11 +22,21 @@
     <button id="btn2" class="btn btn-sm btn-primary" onclick="change()">Change Filter</button>
     <button id="btn3" class="btn btn-sm btn-primary" onclick="snap()" ng-click="random()">Click</button>
     <br>
-    <a id="download">Download Orignal</a>
+    <a id="download">Download Photo</a>
     </center>
 
     <script>
     filters = ["", "sepia", "invert", "blur", "grayscale","colored","saturate","fancy"];
+    filterStyles = {
+      "": "none",
+      "sepia": "sepia(1)",
+      "invert": "invert(1)",
+      "blur": "blur(3px)",
+      "grayscale": "grayscale(1)",
+      "colored": "hue-rotate(180deg) saturate(200%)",
+      "saturate": "saturate(10)",
+      "fancy": "contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4)"
+    };
     findex = 0;
     video = document.getElementById("vid");
     canvas = document.getElementById("cvs");
@@ -37,12 +47,22 @@
     btn3.disabled = true;
 
     function start() {
-      navigator.webkitGetUserMedia({video:true}, gotStream, function() {}); 
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video: true})
+          .then(gotStream)
+          .catch(function(err) { console.error("Error accessing webcam:", err); });
+      } else if (navigator.webkitGetUserMedia) {
+        navigator.webkitGetUserMedia({video: true}, gotStream, function(err) { console.error(err); });
+      }
       btn1.disabled = true;
     }
 
     function gotStream(stream) {
-      video.src = URL.createObjectURL(stream);
+      if ("srcObject" in video) {
+        video.srcObject = stream;
+      } else {
+        video.src = URL.createObjectURL(stream);
+      }
       btn2.disabled = false;
       btn3.disabled = false;
     }
@@ -56,9 +76,14 @@
 
     function snap() {
       canvas.className = '';
-      if (findex != 0)
-      canvas.classList.add(filters[findex]);
-      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      var currentFilter = filters[findex];
+      if (currentFilter) {
+        canvas.classList.add(currentFilter);
+      }
+
+      var ctx = canvas.getContext("2d");
+      ctx.filter = filterStyles[currentFilter] || "none";
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     }
 
  	  function downloadCanvas(link, canvasId, filename) {

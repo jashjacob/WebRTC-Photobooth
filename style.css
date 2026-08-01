@@ -31,26 +31,33 @@
     font-size: 10px;
   }
   .grayscale {
+    filter: grayscale(1);
     -webkit-filter: grayscale(1);
   }
   .sepia {
+    filter: sepia(1);
     -webkit-filter: sepia(1);
   }
   .invert {
+    filter: invert(1);
     -webkit-filter: invert(1);
   }
   .blur {
+    filter: blur(3px);
     -webkit-filter: blur(3px);
   }
   .colored
   {
-      -webkit-filter: hue-rotate(180deg) saturate(200%);
+    filter: hue-rotate(180deg) saturate(200%);
+    -webkit-filter: hue-rotate(180deg) saturate(200%);
   }
 
   .saturate{
-      -webkit-filter: saturate(10);
+    filter: saturate(10);
+    -webkit-filter: saturate(10);
   }
 
   .fancy{
-      -webkit-filter: contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4);
+    filter: contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4);
+    -webkit-filter: contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4);
   }
