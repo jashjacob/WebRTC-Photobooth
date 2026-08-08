@@ -109,22 +109,25 @@ import { AudioService } from '../../services/audio.service';
       align-items: center;
       gap: 14px;
       width: 100%;
+      font-family: 'Nunito', sans-serif;
     }
 
     .timer-selector {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: #161b22;
-      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 16px;
       border-radius: 20px;
-      border: 1px solid #30363d;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
     }
 
     .timer-label {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      color: #94a3b8;
+      color: #5a4a6a;
     }
 
     .timer-options {
@@ -133,26 +136,27 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .timer-btn {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #8b949e;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.8rem;
+      background: rgba(255, 158, 187, 0.1);
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      color: #5a4a6a;
+      padding: 6px 14px;
+      border-radius: 25px;
+      font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
+      font-family: 'Nunito', sans-serif;
     }
 
     .timer-btn:hover:not(:disabled) {
-      background: #30363d;
-      color: #f0f6fc;
+      background: rgba(255, 158, 187, 0.2);
     }
 
     .timer-btn.active {
-      background: #388bfd;
+      background: linear-gradient(135deg, #ff9ebb, #c19ef5);
       color: #ffffff;
-      border-color: #58a6ff;
+      border-color: #ff9ebb;
+      box-shadow: 0 4px 12px rgba(255, 158, 187, 0.3);
     }
 
     .timer-btn:disabled {
@@ -169,22 +173,24 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .btn {
-      padding: 10px 18px;
+      padding: 10px 20px;
       font-size: 0.95rem;
       font-weight: 700;
       border: none;
-      border-radius: 8px;
+      border-radius: 25px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
+      font-family: 'Nunito', sans-serif;
+      color: #5a4a6a;
     }
 
     .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(255, 158, 187, 0.25);
     }
 
     .btn:disabled {
@@ -194,56 +200,46 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .btn-primary {
-      background: #72F0EB;
-      color: #0d1117;
+      background: linear-gradient(135deg, #98d8a8, #87ceeb);
     }
     .btn-primary:hover:not(:disabled) {
-      background: #50d0ca;
+      background: linear-gradient(135deg, #87ceeb, #98d8a8);
     }
 
     .btn-secondary {
-      background: #30363d;
-      color: #f0f6fc;
-      border: 1px solid #484f58;
+      background: linear-gradient(135deg, #c19ef5, #ff9ebb);
     }
     .btn-secondary:hover:not(:disabled) {
-      background: #484f58;
+      background: linear-gradient(135deg, #ff9ebb, #c19ef5);
     }
 
     .btn-snap {
-      background: #1f6feb;
-      color: #ffffff;
+      background: linear-gradient(135deg, #87ceeb, #c19ef5);
     }
     .btn-snap:hover:not(:disabled) {
-      background: #388bfd;
+      background: linear-gradient(135deg, #c19ef5, #87ceeb);
     }
 
     .btn-burst {
-      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
+      background: linear-gradient(135deg, #ff9ebb, #ffb347);
     }
     .btn-burst:hover:not(:disabled) {
-      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-      box-shadow: 0 6px 18px rgba(225, 29, 72, 0.6);
+      background: linear-gradient(135deg, #ffb347, #ff9ebb);
     }
 
     .btn-icon {
-      background: #21262d;
-      color: #8b949e;
-      border: 1px solid #30363d;
+      background: rgba(255, 158, 187, 0.15);
+      border: 1px solid rgba(255, 158, 187, 0.3);
     }
     .btn-icon:hover:not(:disabled) {
-      background: #30363d;
-      color: #c9d1d9;
+      background: rgba(255, 158, 187, 0.25);
     }
 
     .btn-success {
-      background: #238636;
-      color: #ffffff;
+      background: linear-gradient(135deg, #98d8a8, #87ceeb);
     }
     .btn-success:hover:not(:disabled) {
-      background: #2ea043;
+      background: linear-gradient(135deg, #87ceeb, #98d8a8);
     }
 
     .download-bar {
@@ -257,13 +253,14 @@ import { AudioService } from '../../services/audio.service';
 
     .download-link-btn {
       font-size: 0.9rem;
-      font-weight: 600;
-      color: #58a6ff;
+      font-weight: 700;
+      color: #c19ef5;
       text-decoration: underline;
       cursor: pointer;
+      font-family: 'Nunito', sans-serif;
     }
     .download-link-btn:hover {
-      color: #79c0ff;
+      color: #ff9ebb;
     }
   `]
 })

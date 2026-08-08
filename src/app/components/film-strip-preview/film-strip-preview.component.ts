@@ -115,12 +115,14 @@ import { AudioService } from '../../services/audio.service';
   `,
   styles: [`
     .film-strip-card {
-      background: #1e293b;
-      color: #f8fafc;
-      border-radius: 16px;
+      font-family: 'Nunito', sans-serif;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      color: #5a4a6a;
+      border-radius: 20px;
       padding: 24px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-      border: 1px solid #334155;
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
+      border: 1px solid rgba(255, 158, 187, 0.3);
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -129,20 +131,22 @@ import { AudioService } from '../../services/audio.service';
     .card-header h2 {
       margin: 0 0 4px 0;
       font-size: 1.5rem;
-      color: #72F0EB;
+      background: linear-gradient(45deg, #ff9ebb, #c19ef5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .subtitle {
       margin: 0;
       font-size: 0.88rem;
-      color: #94a3b8;
+      color: #5a4a6a;
     }
 
     .section-label {
       display: block;
       font-size: 0.85rem;
       font-weight: 700;
-      color: #cbd5e1;
+      color: #5a4a6a;
       margin-bottom: 8px;
     }
 
@@ -157,39 +161,40 @@ import { AudioService } from '../../services/audio.service';
       padding: 8px 12px;
       font-size: 0.82rem;
       font-weight: 700;
-      border-radius: 8px;
+      border-radius: 25px;
       border: 2px solid transparent;
       cursor: pointer;
       transition: all 0.2s ease;
       text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      font-family: 'Nunito', sans-serif;
     }
 
     .theme-btn.classic-white {
       background: #ffffff;
-      color: #111827;
+      color: #5a4a6a;
+      border-color: #ff9ebb;
     }
 
     .theme-btn.film-black {
-      background: #0f172a;
-      color: #f8fafc;
-      border-color: #475569;
+      background: #c19ef5;
+      color: #ffffff;
     }
 
     .theme-btn.cyber-cyan {
-      background: #08131F;
-      color: #00F3FF;
-      border-color: #00F3FF;
+      background: #87ceeb;
+      color: #ffffff;
     }
 
     .theme-btn.retro-yellow {
-      background: #FEF08A;
-      color: #713F12;
+      background: #ffb347;
+      color: #ffffff;
     }
 
     .theme-btn.active {
       transform: translateY(-2px);
-      box-shadow: 0 0 12px rgba(114, 240, 235, 0.6);
-      border-color: #72F0EB !important;
+      box-shadow: 0 0 12px rgba(255, 158, 187, 0.6);
+      border-color: #ff9ebb !important;
     }
 
     /* Controls Panel */
@@ -198,9 +203,10 @@ import { AudioService } from '../../services/audio.service';
       flex-wrap: wrap;
       gap: 16px;
       align-items: center;
-      background: #0f172a;
+      background: #fff5f7;
       padding: 14px 18px;
-      border-radius: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 158, 187, 0.3);
     }
 
     .input-group {
@@ -213,17 +219,18 @@ import { AudioService } from '../../services/audio.service';
 
     .input-group label {
       font-size: 0.8rem;
-      color: #94a3b8;
+      color: #5a4a6a;
       font-weight: 600;
     }
 
     .input-group input {
       padding: 8px 12px;
-      background: #1e293b;
-      border: 1px solid #475569;
-      border-radius: 6px;
-      color: #ffffff;
+      background: #faf0ff;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      border-radius: 8px;
+      color: #5a4a6a;
       font-size: 0.9rem;
+      font-family: 'Nunito', sans-serif;
     }
 
     .toggle-group {
@@ -233,7 +240,7 @@ import { AudioService } from '../../services/audio.service';
 
     .checkbox-label {
       font-size: 0.85rem;
-      color: #e2e8f0;
+      color: #5a4a6a;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -242,9 +249,10 @@ import { AudioService } from '../../services/audio.service';
 
     /* Thumbnails */
     .thumbnails-container {
-      background: #0f172a;
+      background: #fff5f7;
       padding: 14px;
-      border-radius: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 158, 187, 0.3);
     }
 
     .thumbnails-header {
@@ -253,18 +261,19 @@ import { AudioService } from '../../services/audio.service';
       align-items: center;
       font-size: 0.85rem;
       font-weight: 700;
-      color: #cbd5e1;
+      color: #5a4a6a;
       margin-bottom: 10px;
     }
 
     .clear-btn {
       background: transparent;
       border: none;
-      color: #ef4444;
+      color: #ff9ebb;
       font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       text-decoration: underline;
+      font-family: 'Nunito', sans-serif;
     }
 
     .thumbnails-grid {
@@ -275,9 +284,9 @@ import { AudioService } from '../../services/audio.service';
 
     .thumb-box {
       aspect-ratio: 4/3;
-      background: #1e293b;
-      border: 2px dashed #475569;
-      border-radius: 8px;
+      background: #ffffff;
+      border: 2px dashed #ff9ebb;
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
       display: flex;
@@ -287,7 +296,7 @@ import { AudioService } from '../../services/audio.service';
 
     .thumb-box.filled {
       border-style: solid;
-      border-color: #72F0EB;
+      border-color: #ff9ebb;
     }
 
     .thumb-box img {
@@ -300,7 +309,7 @@ import { AudioService } from '../../services/audio.service';
       position: absolute;
       bottom: 4px;
       right: 4px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(255, 158, 187, 0.8);
       color: #ffffff;
       font-size: 0.65rem;
       padding: 2px 4px;
@@ -310,7 +319,7 @@ import { AudioService } from '../../services/audio.service';
 
     .empty-thumb {
       text-align: center;
-      color: #64748b;
+      color: #c19ef5;
     }
 
     .empty-thumb span {
@@ -333,10 +342,10 @@ import { AudioService } from '../../services/audio.service';
     .canvas-image-container {
       max-height: 580px;
       overflow-y: auto;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-      border: 3px solid #334155;
-      background: #000;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.2);
+      border: 2px solid rgba(255, 158, 187, 0.3);
+      background: #ffffff;
       padding: 10px;
     }
 
@@ -344,16 +353,16 @@ import { AudioService } from '../../services/audio.service';
       display: block;
       width: 280px;
       height: auto;
-      border-radius: 4px;
+      border-radius: 8px;
     }
 
     .empty-preview-placeholder {
       padding: 40px 20px;
       text-align: center;
-      background: #0f172a;
-      border-radius: 12px;
+      background: #faf0ff;
+      border-radius: 16px;
       width: 100%;
-      border: 2px dashed #334155;
+      border: 2px dashed #c19ef5;
     }
 
     .placeholder-icon {
@@ -363,13 +372,13 @@ import { AudioService } from '../../services/audio.service';
 
     .empty-preview-placeholder h3 {
       margin: 0 0 6px 0;
-      color: #e2e8f0;
+      color: #5a4a6a;
     }
 
     .empty-preview-placeholder p {
       margin: 0;
       font-size: 0.85rem;
-      color: #64748b;
+      color: #5a4a6a;
     }
 
     /* Download Buttons */
@@ -384,34 +393,35 @@ import { AudioService } from '../../services/audio.service';
     .btn {
       padding: 12px 18px;
       border: none;
-      border-radius: 8px;
+      border-radius: 25px;
       font-weight: 700;
       font-size: 0.92rem;
       cursor: pointer;
       transition: all 0.2s ease;
       text-align: center;
+      font-family: 'Nunito', sans-serif;
     }
 
     .btn-download-strip {
-      background: #10b981;
+      background: linear-gradient(45deg, #98d8a8, #87ceeb);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 4px 12px rgba(152, 216, 168, 0.4);
     }
 
     .btn-download-strip:hover {
-      background: #059669;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(152, 216, 168, 0.6);
     }
 
     .btn-download-single {
-      background: #3b82f6;
+      background: linear-gradient(45deg, #87ceeb, #c19ef5);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 12px rgba(135, 206, 235, 0.4);
     }
 
     .btn-download-single:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(135, 206, 235, 0.6);
     }
   `]
 })

@@ -68,11 +68,12 @@ import { WebRtcService } from '../../services/webrtc.service';
       position: relative;
       width: 100%;
       aspect-ratio: 4 / 3;
-      background-color: #0d1117;
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-      border: 3px solid #30363d;
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
+      border: 1px solid rgba(255, 158, 187, 0.3);
     }
 
     video {
@@ -111,24 +112,27 @@ import { WebRtcService } from '../../services/webrtc.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(2px);
+      background: rgba(255, 158, 187, 0.2);
+      backdrop-filter: blur(4px);
       z-index: 20;
     }
 
     .countdown-number {
       font-size: 7.5rem;
       font-weight: 900;
-      color: #ffffff;
-      text-shadow: 0 0 20px rgba(0, 243, 255, 0.8), 0 4px 10px rgba(0, 0, 0, 0.8);
-      font-family: 'Impact', 'Segoe UI Black', sans-serif;
+      background: linear-gradient(45deg, #ff9ebb, #c19ef5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 15px rgba(255, 158, 187, 0.4);
+      font-family: 'Nunito', sans-serif;
     }
 
     .cheese-text {
       font-size: 3rem;
       font-weight: 900;
-      color: #facc15;
-      text-shadow: 0 0 20px rgba(250, 204, 21, 0.9), 0 4px 8px rgba(0, 0, 0, 0.8);
+      color: #ff9ebb;
+      text-shadow: 0 0 20px rgba(255, 158, 187, 0.6), 0 4px 8px rgba(255, 158, 187, 0.3);
+      font-family: 'Nunito', sans-serif;
     }
 
     .pop-animation {
@@ -155,17 +159,18 @@ import { WebRtcService } from '../../services/webrtc.service';
       position: absolute;
       top: 14px;
       right: 14px;
-      background: rgba(220, 38, 38, 0.9);
+      background: linear-gradient(135deg, #ff9ebb, #c19ef5);
       color: #ffffff;
       padding: 6px 14px;
-      border-radius: 20px;
+      border-radius: 25px;
       font-size: 0.9rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
       z-index: 15;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 15px rgba(255, 158, 187, 0.4);
+      font-family: 'Nunito', sans-serif;
     }
 
     .pulse-dot {
@@ -187,14 +192,17 @@ import { WebRtcService } from '../../services/webrtc.service';
       position: absolute;
       bottom: 12px;
       left: 12px;
-      background: rgba(0, 0, 0, 0.7);
-      color: #e6edf3;
-      padding: 4px 10px;
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      color: #5a4a6a;
+      padding: 4px 12px;
+      border-radius: 12px;
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.5px;
       z-index: 15;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      font-family: 'Nunito', sans-serif;
     }
   `]
 })

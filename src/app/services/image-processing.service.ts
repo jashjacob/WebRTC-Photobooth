@@ -16,12 +16,16 @@ export class ImageProcessingService {
   private segmenter: ImageSegmenter | null = null;
   private isProcessing = false;
   private canvasContext: CanvasRenderingContext2D | null = null;
-  
-  // A cute background image for replacement
-  private bgImage = new Image();
+
+  // Cached offscreen canvases to avoid creating new ones every frame
+  private offscreenCanvas: HTMLCanvasElement | null = null;
+  private offscreenCtx: CanvasRenderingContext2D | null = null;
+  private maskCanvas: HTMLCanvasElement | null = null;
+  private maskCtx: CanvasRenderingContext2D | null = null;
+
+  private lastTimestamp = 0;
 
   constructor() {
-    this.bgImage.src = 'https://www.transparenttextures.com/patterns/cubes.png'; // Fallback pattern
     this.initializeSegmenter();
   }
 
@@ -38,34 +42,34 @@ export class ImageProcessingService {
           delegate: "GPU"
         },
         runningMode: "VIDEO",
-        outputCategoryMask: true,
-        outputConfidenceMasks: false
+        outputCategoryMask: false,
+        outputConfidenceMasks: true
       });
+      console.log('MediaPipe Selfie Segmenter initialized successfully');
     } catch (error) {
       console.error("Error initializing MediaPipe Image Segmenter:", error);
     }
   }
 
-  public setBackgroundImage(url: string) {
-    this.bgImage.src = url;
-  }
-
   public startProcessing(
-    video: HTMLVideoElement, 
-    canvas: HTMLCanvasElement, 
+    video: HTMLVideoElement,
+    canvas: HTMLCanvasElement,
     removeBackground: boolean,
     filters: FilterOptions
   ) {
     this.isProcessing = true;
     this.canvasContext = canvas.getContext('2d', { willReadFrequently: true });
-    
+
+    // Pre-allocate offscreen canvases
+    this.ensureOffscreenCanvases(canvas.width, canvas.height);
+
     // Start render loop
     const renderLoop = async () => {
       if (!this.isProcessing) return;
 
       if (video.readyState >= 2) { // HAVE_CURRENT_DATA
         if (removeBackground && this.segmenter) {
-          await this.processWithBackgroundRemoval(video, canvas, filters);
+          this.processWithBackgroundRemoval(video, canvas, filters);
         } else {
           this.processStandard(video, canvas, filters);
         }
@@ -81,78 +85,104 @@ export class ImageProcessingService {
     this.isProcessing = false;
   }
 
-  private async processWithBackgroundRemoval(
-    video: HTMLVideoElement, 
+  private ensureOffscreenCanvases(width: number, height: number) {
+    if (!this.offscreenCanvas || this.offscreenCanvas.width !== width || this.offscreenCanvas.height !== height) {
+      this.offscreenCanvas = document.createElement('canvas');
+      this.offscreenCanvas.width = width;
+      this.offscreenCanvas.height = height;
+      this.offscreenCtx = this.offscreenCanvas.getContext('2d')!;
+    }
+    if (!this.maskCanvas || this.maskCanvas.width !== width || this.maskCanvas.height !== height) {
+      this.maskCanvas = document.createElement('canvas');
+      this.maskCanvas.width = width;
+      this.maskCanvas.height = height;
+      this.maskCtx = this.maskCanvas.getContext('2d')!;
+    }
+  }
+
+  private processWithBackgroundRemoval(
+    video: HTMLVideoElement,
     canvas: HTMLCanvasElement,
     filters: FilterOptions
   ) {
-    if (!this.canvasContext || !this.segmenter) return;
-
-    const startTimeMs = performance.now();
-    const segmentationResult = this.segmenter.segmentForVideo(video, startTimeMs);
-    const categoryMask = segmentationResult.categoryMask;
-
-    if (!categoryMask) {
-        this.processStandard(video, canvas, filters);
-        return;
-    }
+    if (!this.canvasContext || !this.segmenter || !this.offscreenCtx || !this.maskCtx) return;
 
     const { width, height } = canvas;
     const ctx = this.canvasContext;
 
-    // Draw background first
-    ctx.clearRect(0, 0, width, height);
-    
-    // Draw cute pastel gradient or image as background
+    // Ensure monotonically increasing timestamps for MediaPipe
+    const now = performance.now();
+    const timestamp = now > this.lastTimestamp ? now : this.lastTimestamp + 1;
+    this.lastTimestamp = timestamp;
+
+    // Run segmentation
+    let segmentationResult;
+    try {
+      segmentationResult = this.segmenter.segmentForVideo(video, timestamp);
+    } catch (e) {
+      console.warn('Segmentation frame skipped:', e);
+      this.processStandard(video, canvas, filters);
+      return;
+    }
+
+    const confidenceMasks = segmentationResult.confidenceMasks;
+    if (!confidenceMasks || confidenceMasks.length === 0) {
+      this.processStandard(video, canvas, filters);
+      segmentationResult.close();
+      return;
+    }
+
+    // The selfie segmenter confidence mask: higher values = more likely person
+    const maskData = confidenceMasks[0].getAsFloat32Array();
+    const maskWidth = confidenceMasks[0].width;
+    const maskHeight = confidenceMasks[0].height;
+
+    // Step 1: Draw pastel gradient background on the main canvas
+    ctx.save();
+    ctx.filter = 'none';
     const gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#ffd1ff'); // Pastel pink
+    gradient.addColorStop(0.5, '#ffe8f0'); // Soft rose
     gradient.addColorStop(1, '#c1e3ff'); // Baby blue
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+    ctx.restore();
 
-    if (this.bgImage.complete) {
-        // Simple tiling or stretch
-        ctx.globalAlpha = 0.5; // Soft blend
-        ctx.drawImage(this.bgImage, 0, 0, width, height);
-        ctx.globalAlpha = 1.0;
-    }
+    // Step 2: Draw video to offscreen canvas
+    this.offscreenCtx.drawImage(video, 0, 0, width, height);
 
-    // Convert mask to image data
-    const maskData = categoryMask.getAsFloat32Array();
-    
-    // Draw original video to an offscreen canvas to get its pixel data
-    const offscreen = document.createElement('canvas');
-    offscreen.width = width;
-    offscreen.height = height;
-    const offCtx = offscreen.getContext('2d')!;
-    offCtx.drawImage(video, 0, 0, width, height);
-    const videoData = offCtx.getImageData(0, 0, width, height);
-    
-    // Apply mask to video data
+    // Step 3: Build a grayscale alpha mask on the mask canvas
+    // White = person (keep), Black = background (remove)
+    const maskImageData = this.maskCtx.createImageData(maskWidth, maskHeight);
     for (let i = 0; i < maskData.length; i++) {
-        // Selfie segmentation usually sets background to > 0. 
-        // We might need to invert it based on the exact model output.
-        // For selfie segmenter, 0 is usually background, 1 is person (or vice versa depending on model).
-        // Standard selfie_segmenter: 0 is person, 1 is background in category mask?
-        // Actually, let's just make it slightly transparent if it's background.
-        if (maskData[i] > 0.5) {
-            videoData.data[i * 4 + 3] = 0; // Transparent
-        }
+      const confidence = maskData[i]; // 0.0 = background, 1.0 = person
+      const alpha = Math.round(confidence * 255);
+      maskImageData.data[i * 4] = 255;     // R
+      maskImageData.data[i * 4 + 1] = 255; // G
+      maskImageData.data[i * 4 + 2] = 255; // B
+      maskImageData.data[i * 4 + 3] = alpha; // A - person is opaque, bg is transparent
     }
+    this.maskCtx.putImageData(maskImageData, 0, 0);
 
-    // Apply Kawaii filters to the person
-    this.applyFilters(videoData, filters);
+    // Step 4: Use the mask to cut out the person from the video
+    // Draw mask to offscreen, then use 'destination-in' to keep only person pixels
+    this.offscreenCtx.save();
+    this.offscreenCtx.globalCompositeOperation = 'destination-in';
+    this.offscreenCtx.drawImage(this.maskCanvas!, 0, 0, width, height);
+    this.offscreenCtx.restore();
 
-    // Draw the person over the background
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    tempCanvas.getContext('2d')!.putImageData(videoData, 0, 0);
-    ctx.drawImage(tempCanvas, 0, 0);
+    // Step 5: Draw the masked person (with filters) over the gradient background
+    ctx.save();
+    ctx.filter = this.buildCssFilterString(filters);
+    ctx.drawImage(this.offscreenCanvas!, 0, 0);
+    ctx.restore();
+
+    // Clean up the segmentation result to prevent memory leaks
+    segmentationResult.close();
   }
 
   private processStandard(
-    video: HTMLVideoElement, 
+    video: HTMLVideoElement,
     canvas: HTMLCanvasElement,
     filters: FilterOptions
   ) {
@@ -160,58 +190,26 @@ export class ImageProcessingService {
     const { width, height } = canvas;
     const ctx = this.canvasContext;
 
+    ctx.filter = this.buildCssFilterString(filters);
     ctx.drawImage(video, 0, 0, width, height);
-    
-    const imageData = ctx.getImageData(0, 0, width, height);
-    this.applyFilters(imageData, filters);
-    ctx.putImageData(imageData, 0, 0);
+    ctx.filter = 'none';
   }
 
-  private applyFilters(imageData: ImageData, filters: FilterOptions) {
-    const data = imageData.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      // Extract RGB
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
-      
-      // 1. Saturation
-      if (filters.saturation !== 100) {
-        const sat = filters.saturation / 100;
-        const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
-        r = -gray * sat + r * sat + gray;
-        g = -gray * sat + g * sat + gray;
-        b = -gray * sat + b * sat + gray;
-      }
-
-      // 2. Contrast
-      if (filters.contrast !== 100) {
-        const factor = (259 * (filters.contrast + 255)) / (255 * (259 - filters.contrast));
-        r = factor * (r - 128) + 128;
-        g = factor * (g - 128) + 128;
-        b = factor * (b - 128) + 128;
-      }
-
-      // 3. Brightness
-      if (filters.brightness !== 100) {
-        const br = (filters.brightness - 100);
-        r += br;
-        g += br;
-        b += br;
-      }
-
-      // 4. Pastel (Soft Kawaii look: increase brightness slightly, tint pink/peach)
-      if (filters.pastel) {
-          r = Math.min(255, r + 20); // Add a warm pink tone
-          g = Math.min(255, g + 10);
-          b = Math.min(255, b + 15);
-      }
-
-      // Write back
-      data[i] = r;
-      data[i + 1] = g;
-      data[i + 2] = b;
+  private buildCssFilterString(filters: FilterOptions): string {
+    const filterParts: string[] = [];
+    if (filters.brightness !== 100) {
+      filterParts.push(`brightness(${filters.brightness}%)`);
     }
+    if (filters.contrast !== 100) {
+      filterParts.push(`contrast(${filters.contrast}%)`);
+    }
+    if (filters.saturation !== 100) {
+      filterParts.push(`saturate(${filters.saturation}%)`);
+    }
+    if (filters.pastel) {
+      // Warm pink/peach tint for Kawaii look
+      filterParts.push('sepia(20%) hue-rotate(-20deg) saturate(120%) brightness(105%)');
+    }
+    return filterParts.length > 0 ? filterParts.join(' ') : 'none';
   }
 }

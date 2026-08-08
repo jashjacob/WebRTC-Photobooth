@@ -125,34 +125,38 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     .film-strip-container {
       width: 100%;
       margin-top: 24px;
+      font-family: 'Nunito', sans-serif;
     }
 
     .film-strip-card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      border-radius: 20px;
       padding: 24px;
-      color: #f0f6fc;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      color: #5a4a6a;
+      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
     }
 
     .card-header h2 {
       margin: 0 0 4px 0;
       font-size: 1.5rem;
-      color: #58a6ff;
+      background: linear-gradient(45deg, #ff9ebb, #c19ef5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .subtitle {
       margin: 0 0 20px 0;
-      color: #8b949e;
+      color: #b08dba;
       font-size: 0.9rem;
     }
 
     /* Customization Panel */
     .customization-panel {
-      background: #0d1117;
-      border: 1px solid #21262d;
-      border-radius: 12px;
+      background: #fff5f7;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      border-radius: 16px;
       padding: 16px;
       margin-bottom: 24px;
       display: flex;
@@ -163,7 +167,7 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     .control-label {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #c9d1d9;
+      color: #5a4a6a;
       margin-bottom: 8px;
       display: block;
     }
@@ -175,36 +179,36 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     }
 
     .theme-btn {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
+      background: #ffffff;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      color: #5a4a6a;
       padding: 6px 14px;
-      border-radius: 20px;
+      border-radius: 25px;
       font-size: 0.85rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(255, 158, 187, 0.1);
     }
 
     .theme-btn:hover {
-      background: #30363d;
-      color: #ffffff;
+      background: #fff0f5;
     }
 
     .theme-btn.active {
-      border-color: #58a6ff;
-      background: #1f6feb;
-      color: #ffffff;
+      border-color: #ff9ebb;
+      background: #fff0f5;
       font-weight: bold;
+      box-shadow: 0 0 10px rgba(255, 158, 187, 0.4);
     }
 
     .theme-swatch {
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(90, 74, 106, 0.2);
       display: inline-block;
     }
 
@@ -222,23 +226,24 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 
     .form-control {
       width: 100%;
-      background: #161b22;
-      border: 1px solid #30363d;
+      background: #fdf5f7;
+      border: 1px solid rgba(255, 158, 187, 0.4);
       border-radius: 6px;
       padding: 8px 12px;
-      color: #ffffff;
+      color: #5a4a6a;
       font-size: 0.9rem;
       box-sizing: border-box;
     }
 
     .form-control:focus {
       outline: none;
-      border-color: #58a6ff;
+      border-color: #ff9ebb;
+      box-shadow: 0 0 8px rgba(255, 158, 187, 0.3);
     }
 
     .checkbox-label {
       font-size: 0.85rem;
-      color: #c9d1d9;
+      color: #5a4a6a;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -265,15 +270,15 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #0d1117;
-      border: 1px solid #21262d;
+      background: #fdfafb;
+      border: 1px solid rgba(255, 158, 187, 0.3);
       border-radius: 12px;
       padding: 16px;
     }
 
     .strip-preview-section h3 {
       margin-top: 0;
-      color: #f0f6fc;
+      color: #5a4a6a;
       font-size: 1.1rem;
     }
 
@@ -281,10 +286,10 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
       max-height: 520px;
       overflow-y: auto;
       border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
-      border: 1px solid #30363d;
+      box-shadow: 0 4px 16px rgba(255, 158, 187, 0.2);
+      border: 1px solid rgba(255, 158, 187, 0.3);
       padding: 8px;
-      background: #000000;
+      background: #ffffff;
     }
 
     .film-strip-image {
@@ -302,21 +307,22 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     }
 
     .btn-download-strip {
-      background: #238636;
-      color: #ffffff;
+      background: linear-gradient(45deg, #98d8a8, #a8e8b8);
+      color: #5a4a6a;
       font-weight: bold;
       padding: 10px 20px;
       border: none;
-      border-radius: 8px;
+      border-radius: 25px;
       cursor: pointer;
       font-size: 0.95rem;
       transition: background 0.2s ease;
       width: 100%;
       max-width: 280px;
+      box-shadow: 0 4px 12px rgba(152, 216, 168, 0.3);
     }
 
     .btn-download-strip:hover {
-      background: #2ea043;
+      background: linear-gradient(45deg, #87c797, #97d7a7);
     }
 
     /* Shots Gallery Section */
@@ -329,7 +335,7 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 
     .shots-gallery-section h3 {
       margin-top: 0;
-      color: #f0f6fc;
+      color: #5a4a6a;
       font-size: 1.1rem;
     }
 
@@ -341,19 +347,20 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 
     .shot-card {
       position: relative;
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid rgba(255, 158, 187, 0.3);
+      border-radius: 12px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      box-shadow: 0 4px 12px rgba(255, 158, 187, 0.1);
     }
 
     .shot-badge {
       position: absolute;
       top: 6px;
       left: 6px;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(255, 158, 187, 0.85);
       color: #ffffff;
       font-size: 0.7rem;
       font-weight: bold;
@@ -370,10 +377,10 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     }
 
     .btn-shot-download {
-      background: #21262d;
-      color: #c9d1d9;
+      background: #fff5f7;
+      color: #5a4a6a;
       border: none;
-      border-top: 1px solid #30363d;
+      border-top: 1px solid rgba(255, 158, 187, 0.3);
       padding: 6px;
       font-size: 0.75rem;
       cursor: pointer;
@@ -381,8 +388,7 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     }
 
     .btn-shot-download:hover {
-      background: #30363d;
-      color: #ffffff;
+      background: #ffecf0;
     }
 
     .gallery-actions {
@@ -391,10 +397,10 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 
     .btn-danger-outline {
       background: transparent;
-      border: 1px solid #da3633;
-      color: #f85149;
+      border: 1px solid rgba(255, 158, 187, 0.8);
+      color: #ff85a2;
       padding: 8px 16px;
-      border-radius: 6px;
+      border-radius: 25px;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: 600;
@@ -402,16 +408,16 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
     }
 
     .btn-danger-outline:hover {
-      background: #da3633;
-      color: #ffffff;
+      background: #fff0f5;
+      color: #ff6b8f;
     }
 
     /* Empty State */
     .empty-state {
       text-align: center;
       padding: 40px 20px;
-      background: #0d1117;
-      border: 2px dashed #30363d;
+      background: #fdfafb;
+      border: 2px dashed rgba(255, 158, 187, 0.5);
       border-radius: 12px;
     }
 
@@ -422,12 +428,12 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 
     .empty-state h3 {
       margin: 0 0 8px 0;
-      color: #c9d1d9;
+      color: #5a4a6a;
     }
 
     .empty-state p {
       margin: 0;
-      color: #8b949e;
+      color: #b08dba;
       font-size: 0.9rem;
       max-width: 480px;
       margin: 0 auto;
