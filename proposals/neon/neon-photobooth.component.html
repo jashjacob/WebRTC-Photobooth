@@ -1,0 +1,79 @@
+<div class="neon-container">
+  <header class="neon-header">
+    <h1 class="glitch" data-text="CYBERBOOTH">CYBERBOOTH</h1>
+    <p class="subtitle">Neural Interface Captured</p>
+  </header>
+
+  <main class="booth-layout">
+    <div class="viewfinder-wrapper" [class.hidden]="capturedPhoto">
+      <div class="crt-overlay"></div>
+      <!-- Hidden video element for source -->
+      <video #videoElement autoplay playsinline muted class="hidden"></video>
+      
+      <!-- Display canvas with processed effects -->
+      <canvas #canvasElement width="640" height="480" class="main-canvas"></canvas>
+
+      <!-- Overlay Frame -->
+      <div class="frame-overlay" *ngIf="activeFrame">
+        <!-- Using a placeholder styling for frames to simulate them since they might not exist in assets -->
+        <div class="simulated-frame" [ngClass]="activeFrame.split('.')[0]"></div>
+      </div>
+      
+      <button class="neon-btn capture-btn" (click)="takePhoto()">
+        <span class="btn-text">INITIALIZE CAPTURE</span>
+      </button>
+    </div>
+
+    <!-- Results View -->
+    <div class="results-wrapper" *ngIf="capturedPhoto">
+      <h2 class="neon-text-cyan">TRANSMISSION READY</h2>
+      <div class="result-image-container">
+        <img [src]="capturedPhoto" alt="Captured Neon Photo" class="captured-img" />
+      </div>
+      
+      <div class="share-actions">
+        <div class="qr-code-box" *ngIf="qrCodeUrl">
+          <p>Scan to Link</p>
+          <img [src]="qrCodeUrl" alt="QR Code" class="qr-code" />
+        </div>
+        
+        <div class="btn-group">
+          <button class="neon-btn share-btn" (click)="sharePhoto()">
+            <span class="btn-text">BROADCAST (SHARE)</span>
+          </button>
+          <button class="neon-btn retake-btn outline" (click)="retake()">
+            <span class="btn-text">REBOOT (RETAKE)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Sidebar -->
+    <aside class="controls-panel" *ngIf="!capturedPhoto">
+      <div class="control-group">
+        <h3>NEURAL FILTERS</h3>
+        <button class="cyber-chip" [class.active]="currentFilter === 'none'" (click)="setFilter('none')">RAW</button>
+        <button class="cyber-chip" [class.active]="currentFilter === 'neon-glow'" (click)="setFilter('neon-glow')">NEON GLOW</button>
+        <button class="cyber-chip" [class.active]="currentFilter === 'cyber-glitch'" (click)="setFilter('cyber-glitch')">GLITCH</button>
+        <button class="cyber-chip" [class.active]="currentFilter === 'crt-scanline'" (click)="setFilter('crt-scanline')">CRT SCAN</button>
+      </div>
+
+      <div class="control-group">
+        <h3>AI BACKGROUND</h3>
+        <button class="cyber-chip" [class.active]="backgroundMode === 'none'" (click)="setBackgroundMode('none')">OFF</button>
+        <button class="cyber-chip" [class.active]="backgroundMode === 'blur'" (click)="setBackgroundMode('blur')">CENSOR (BLUR)</button>
+        <button class="cyber-chip" [class.active]="backgroundMode === 'replace'" (click)="setBackgroundMode('replace')">VOID (REPLACE)</button>
+      </div>
+
+      <div class="control-group">
+        <h3>HOLOGRAPHIC FRAMES</h3>
+        <button class="cyber-chip" [class.active]="activeFrame === null" (click)="setFrame(null)">NONE</button>
+        <button class="cyber-chip" *ngFor="let frame of frames" 
+                [class.active]="activeFrame === frame" 
+                (click)="setFrame(frame)">
+          {{ frame.split('.')[0] | uppercase }}
+        </button>
+      </div>
+    </aside>
+  </main>
+</div>

@@ -1,0 +1,86 @@
+<div class="app-container">
+  <!-- Header -->
+  <header class="header glass">
+    <h1>WebRTC Photobooth</h1>
+    <div class="badge">Sleek Minimalist Edition</div>
+  </header>
+
+  <main class="main-content">
+    <!-- Camera Section -->
+    <div class="camera-section glass">
+      <div class="video-container">
+        <!-- Hidden video for capturing stream -->
+        <video #videoElement playsinline hidden></video>
+        <!-- Canvas for rendering processed frames -->
+        <canvas #canvasElement width="1280" height="720"></canvas>
+      </div>
+      
+      <!-- Controls -->
+      <div class="controls-container">
+        <div class="control-group">
+          <h3>Filters</h3>
+          <div class="button-row">
+            <button *ngFor="let f of filters" 
+                    [class.active]="activeFilter === f" 
+                    (click)="setFilter(f)"
+                    class="btn">
+              {{ f | titlecase }}
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Background AI</h3>
+          <div class="button-row">
+            <button *ngFor="let mode of backgroundModes" 
+                    [class.active]="activeBackgroundMode === mode" 
+                    (click)="setBackgroundMode(mode)"
+                    class="btn">
+              {{ mode | titlecase }}
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Frames</h3>
+          <div class="button-row">
+            <button *ngFor="let frame of frames" 
+                    (click)="setFrame(frame.url)"
+                    class="btn">
+              {{ frame.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="capture-btn" (click)="takePhoto()">
+        <span class="inner-circle"></span>
+      </button>
+    </div>
+
+    <!-- Gallery Section -->
+    <div class="gallery-section glass" *ngIf="capturedPhotos.length > 0">
+      <h2>Gallery</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item" *ngFor="let photo of capturedPhotos">
+          <img [src]="photo" alt="Captured Photo" />
+          <button class="share-btn btn" (click)="sharePhoto(photo)">Share & QR</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Share Modal -->
+  <div class="modal" *ngIf="activePhoto">
+    <div class="modal-content glass">
+      <button class="close-btn" (click)="closeShareModal()">&times;</button>
+      <h2>Share Photo</h2>
+      <img [src]="activePhoto" class="modal-preview" alt="Preview" />
+      
+      <div class="qr-code-container" *ngIf="qrCodeUrl">
+        <p>Scan to download</p>
+        <img [src]="qrCodeUrl" alt="QR Code" class="qr-img" />
+      </div>
+    </div>
+  </div>
+</div>
