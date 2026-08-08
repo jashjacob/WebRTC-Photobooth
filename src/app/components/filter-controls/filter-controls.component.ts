@@ -9,258 +9,468 @@ import { AudioService } from '../../services/audio.service';
   imports: [CommonModule],
   template: `
     <div class="controls-container">
-      <!-- Countdown Duration Selector -->
-      <div class="timer-selector">
-        <span class="timer-label">⏱️ Countdown Timer:</span>
-        <div class="timer-options">
+      
+      <!-- 1. Horizontal Live Filter Picker Carousel -->
+      <div class="filter-carousel-section">
+        <div class="section-title-row">
+          <span class="section-badge">✨ Live Camera Filters</span>
+          <span class="active-filter-indicator">{{ webrtcService.currentFilter().label }}</span>
+        </div>
+        <div class="filter-scroll-track">
+          @for (f of webrtcService.filters; track f.name; let i = $index) {
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="webrtcService.filterIndex() === i"
+              [disabled]="webrtcService.isCapturing()"
+              (click)="webrtcService.setFilterIndex(i)"
+              [title]="'Select ' + f.label + ' filter'"
+            >
+              <span class="chip-icon">{{ getFilterEmoji(f.name) }}</span>
+              <span class="chip-label">{{ f.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- 2. Main Shutter Console Card -->
+      <div class="shutter-console-card">
+        
+        <!-- Header Controls Row: Timer & Audio -->
+        <div class="console-top-row">
+          <!-- Segmented Countdown Timer -->
+          <div class="timer-segment">
+            <span class="timer-tag">⏱️ Countdown:</span>
+            <div class="segmented-pill">
+              <button 
+                type="button" 
+                class="seg-btn" 
+                [class.active]="webrtcService.countdownSeconds() === 3"
+                [disabled]="webrtcService.isCapturing()"
+                (click)="webrtcService.setCountdownSeconds(3)"
+              >
+                3s
+              </button>
+              <button 
+                type="button" 
+                class="seg-btn" 
+                [class.active]="webrtcService.countdownSeconds() === 5"
+                [disabled]="webrtcService.isCapturing()"
+                (click)="webrtcService.setCountdownSeconds(5)"
+              >
+                5s
+              </button>
+            </div>
+          </div>
+
+          <!-- Camera Stream & Audio Action Buttons -->
+          <div class="console-mini-actions">
+            @if (!webrtcService.isStreaming()) {
+              <button 
+                id="btn1" 
+                class="mini-btn start-cam-btn" 
+                (click)="onStart()"
+                title="Start Camera Stream"
+              >
+                📹 Start Camera
+              </button>
+            } @else {
+              <button 
+                class="mini-btn stop-cam-btn" 
+                (click)="webrtcService.stopCamera()"
+                [disabled]="webrtcService.isCapturing()"
+                title="Stop Camera Stream"
+              >
+                🛑 Stop
+              </button>
+            }
+
+            <button 
+              id="btnAudio" 
+              class="mini-btn audio-btn" 
+              [class.muted]="audioService.isMuted()"
+              (click)="onToggleAudio()"
+              [title]="audioService.isMuted() ? 'Unmute countdown audio' : 'Mute countdown audio'"
+            >
+              {{ audioService.isMuted() ? '🔇 Muted' : '🔊 Sound On' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Giant Arcade Shutter & Snap Actions Row -->
+        <div class="shutter-actions-row">
+          <!-- Primary CTA: 4-Shot Photobooth Burst -->
           <button 
-            type="button" 
-            class="timer-btn" 
-            [class.active]="webrtcService.countdownSeconds() === 3"
-            [disabled]="webrtcService.isCapturing()"
-            (click)="webrtcService.setCountdownSeconds(3)"
+            id="btn4" 
+            class="arcade-shutter-btn" 
+            [class.capturing]="webrtcService.isCapturing()"
+            [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
+            (click)="onBurst()"
           >
-            3 Seconds
+            <div class="shutter-glow-ring"></div>
+            <div class="shutter-inner-content">
+              <span class="shutter-icon">📸</span>
+              <div class="shutter-text-stack">
+                <strong class="shutter-main-text">
+                  @if (webrtcService.isCapturing()) {
+                    Taking Shot {{ webrtcService.burstIndex() }} / 4...
+                  } @else {
+                    Start 4-Shot Burst
+                  }
+                </strong>
+                <small class="shutter-sub-text">Auto-generates vertical film strip</small>
+              </div>
+            </div>
           </button>
+
+          <!-- Secondary Quick Snap Button -->
           <button 
-            type="button" 
-            class="timer-btn" 
-            [class.active]="webrtcService.countdownSeconds() === 5"
-            [disabled]="webrtcService.isCapturing()"
-            (click)="webrtcService.setCountdownSeconds(5)"
+            id="btn3" 
+            class="single-snap-pill-btn" 
+            [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
+            (click)="onSnap()"
+            title="Capture a single photo"
           >
-            5 Seconds
+            <span>📷</span> Single Snap
           </button>
         </div>
       </div>
 
-      <div class="button-group">
-        <!-- Start / Stop Camera -->
-        <button 
-          id="btn1" 
-          class="btn btn-primary" 
-          [disabled]="webrtcService.isStreaming() || webrtcService.isCapturing()" 
-          (click)="onStart()"
-        >
-          📹 Start Camera
-        </button>
-
-        <!-- Change Filter -->
-        <button 
-          id="btn2" 
-          class="btn btn-secondary" 
-          [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
-          (click)="onChangeFilter()"
-        >
-          🎨 Filter: {{ webrtcService.currentFilter().label }}
-        </button>
-
-        <!-- Single Photo Snap -->
-        <button 
-          id="btn3" 
-          class="btn btn-snap" 
-          [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
-          (click)="onSnap()"
-        >
-          📷 Single Photo ({{ webrtcService.countdownSeconds() }}s)
-        </button>
-
-        <!-- 4-Shot Photobooth Burst -->
-        <button 
-          id="btn4" 
-          class="btn btn-burst" 
-          [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
-          (click)="onBurst()"
-        >
-          📸 Start 4-Shot Burst ({{ webrtcService.countdownSeconds() }}s)
-        </button>
-
-        <!-- Audio Toggle -->
-        <button 
-          id="btnAudio" 
-          class="btn btn-icon" 
-          (click)="onToggleAudio()"
-          [title]="audioService.isMuted() ? 'Unmute countdown audio' : 'Mute countdown audio'"
-        >
-          {{ audioService.isMuted() ? '🔇 Audio Off' : '🔊 Audio On' }}
-        </button>
-      </div>
-
-      <!-- Quick Action / Download Links -->
-      <div class="download-bar">
-        @if (webrtcService.filmStripDataUrl()) {
-          <button id="downloadFilmStrip" class="btn btn-success" (click)="onDownloadFilmStrip()">
-            🎞️ Download Film Strip Collage
-          </button>
-        }
-        @if (webrtcService.capturedImageDataUrl()) {
-          <a id="download" class="download-link-btn" (click)="onDownloadSingle()">
-            💾 Download Last Photo
-          </a>
-        }
-      </div>
     </div>
   `,
   styles: [`
     .controls-container {
-      margin-top: 20px;
+      margin-top: 14px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 14px;
+      gap: 16px;
       width: 100%;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
       font-family: 'Nunito', sans-serif;
     }
 
-    .timer-selector {
+    /* 1. Filter Carousel Section */
+    .filter-carousel-section {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 158, 187, 0.4);
+      box-shadow: 0 6px 20px rgba(255, 158, 187, 0.12);
+    }
+
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .section-badge {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #9333ea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .active-filter-indicator {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #ff6b8b;
+      background: #ffe4e6;
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+
+    .filter-scroll-track {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scroll-behavior: smooth;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #ffffff;
+      border: 1.5px solid #fed7e2;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #5a4a6a;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      flex-shrink: 0;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .filter-chip:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: #ff9ebb;
+      background: #fff5f7;
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, #ff9ebb 0%, #c19ef5 100%);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(255, 158, 187, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .filter-chip:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .chip-icon {
+      font-size: 1rem;
+    }
+
+    /* 2. Shutter Console Card */
+    .shutter-console-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 16px 20px;
+      border: 1px solid rgba(255, 158, 187, 0.4);
+      box-shadow: 0 8px 24px rgba(255, 158, 187, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .console-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* Segmented Timer */
+    .timer-segment {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(8px);
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 158, 187, 0.3);
-      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
+      gap: 8px;
     }
 
-    .timer-label {
-      font-size: 0.9rem;
+    .timer-tag {
+      font-size: 0.82rem;
       font-weight: 700;
-      color: #5a4a6a;
+      color: #718096;
     }
 
-    .timer-options {
+    .segmented-pill {
       display: flex;
-      gap: 6px;
+      background: #f1f5f9;
+      border-radius: 20px;
+      padding: 2px;
+      border: 1px solid #e2e8f0;
     }
 
-    .timer-btn {
-      background: rgba(255, 158, 187, 0.1);
-      border: 1px solid rgba(255, 158, 187, 0.3);
-      color: #5a4a6a;
-      padding: 6px 14px;
-      border-radius: 25px;
-      font-size: 0.85rem;
-      font-weight: 700;
+    .seg-btn {
+      border: none;
+      background: transparent;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: 'Nunito', sans-serif;
     }
 
-    .timer-btn:hover:not(:disabled) {
-      background: rgba(255, 158, 187, 0.2);
+    .seg-btn.active {
+      background: #ffffff;
+      color: #ff6b8b;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .timer-btn.active {
-      background: linear-gradient(135deg, #ff9ebb, #c19ef5);
-      color: #ffffff;
-      border-color: #ff9ebb;
-      box-shadow: 0 4px 12px rgba(255, 158, 187, 0.3);
-    }
-
-    .timer-btn:disabled {
+    .seg-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
-    .button-group {
+    /* Console Mini Actions */
+    .console-mini-actions {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-btn {
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .start-cam-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .start-cam-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .stop-cam-btn {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+    }
+
+    .audio-btn {
+      background: #f3e8ff;
+      color: #7e22ce;
+      border: 1px solid #d8b4fe;
+    }
+
+    .audio-btn.muted {
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-color: #cbd5e1;
+    }
+
+    .mini-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .mini-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Shutter Actions Row */
+    .shutter-actions-row {
+      display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .btn {
-      padding: 10px 20px;
-      font-size: 0.95rem;
-      font-weight: 700;
+    /* Giant Arcade Shutter Button */
+    .arcade-shutter-btn {
+      flex: 1;
+      position: relative;
+      background: linear-gradient(135deg, #ff6b8b 0%, #ff8e53 100%);
       border: none;
-      border-radius: 25px;
+      border-radius: 20px;
+      padding: 14px 20px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(255, 107, 139, 0.4);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      color: #ffffff;
+      font-family: 'Nunito', sans-serif;
+      overflow: hidden;
+    }
+
+    .arcade-shutter-btn:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 12px 28px rgba(255, 107, 139, 0.55);
+    }
+
+    .arcade-shutter-btn:active:not(:disabled) {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 4px 12px rgba(255, 107, 139, 0.3);
+    }
+
+    .arcade-shutter-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .arcade-shutter-btn.capturing {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      animation: shutterPulse 1.2s infinite;
+    }
+
+    @keyframes shutterPulse {
+      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+      70% { box-shadow: 0 0 0 16px rgba(168, 85, 247, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+    }
+
+    .shutter-inner-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .shutter-icon {
+      font-size: 1.8rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .shutter-text-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .shutter-main-text {
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .shutter-sub-text {
+      font-size: 0.72rem;
+      opacity: 0.92;
+      font-weight: 700;
+    }
+
+    /* Single Snap Pill Button */
+    .single-snap-pill-btn {
+      padding: 14px 18px;
+      border-radius: 20px;
+      background: #ffffff;
+      border: 2px solid #ff9ebb;
+      color: #5a4a6a;
+      font-weight: 800;
+      font-size: 0.88rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       transition: all 0.2s ease;
-      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
+      box-shadow: 0 4px 10px rgba(255, 158, 187, 0.15);
       font-family: 'Nunito', sans-serif;
-      color: #5a4a6a;
+      white-space: nowrap;
     }
 
-    .btn:hover:not(:disabled) {
+    .single-snap-pill-btn:hover:not(:disabled) {
+      background: #fff5f7;
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(255, 158, 187, 0.25);
+      box-shadow: 0 6px 14px rgba(255, 158, 187, 0.25);
     }
 
-    .btn:disabled {
+    .single-snap-pill-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #98d8a8, #87ceeb);
-    }
-    .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #87ceeb, #98d8a8);
-    }
-
-    .btn-secondary {
-      background: linear-gradient(135deg, #c19ef5, #ff9ebb);
-    }
-    .btn-secondary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #ff9ebb, #c19ef5);
-    }
-
-    .btn-snap {
-      background: linear-gradient(135deg, #87ceeb, #c19ef5);
-    }
-    .btn-snap:hover:not(:disabled) {
-      background: linear-gradient(135deg, #c19ef5, #87ceeb);
-    }
-
-    .btn-burst {
-      background: linear-gradient(135deg, #ff9ebb, #ffb347);
-    }
-    .btn-burst:hover:not(:disabled) {
-      background: linear-gradient(135deg, #ffb347, #ff9ebb);
-    }
-
-    .btn-icon {
-      background: rgba(255, 158, 187, 0.15);
-      border: 1px solid rgba(255, 158, 187, 0.3);
-    }
-    .btn-icon:hover:not(:disabled) {
-      background: rgba(255, 158, 187, 0.25);
-    }
-
-    .btn-success {
-      background: linear-gradient(135deg, #98d8a8, #87ceeb);
-    }
-    .btn-success:hover:not(:disabled) {
-      background: linear-gradient(135deg, #87ceeb, #98d8a8);
-    }
-
-    .download-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin-top: 4px;
-    }
-
-    .download-link-btn {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #c19ef5;
-      text-decoration: underline;
-      cursor: pointer;
-      font-family: 'Nunito', sans-serif;
-    }
-    .download-link-btn:hover {
-      color: #ff9ebb;
     }
   `]
 })
@@ -271,12 +481,28 @@ export class FilterControlsComponent {
   @Output() snapClicked = new EventEmitter<void>();
   @Output() burstClicked = new EventEmitter<void>();
 
-  onStart(): void {
-    this.webrtcService.startCamera();
+  getFilterEmoji(name: string): string {
+    const emojiMap: Record<string, string> = {
+      'none': '📷',
+      'pastel': '🌸',
+      'dreamy': '☁️',
+      'vhs': '📼',
+      'golden-hour': '🌅',
+      'matcha': '🍵',
+      'bubblegum': '🍬',
+      'film-noir': '🖤',
+      'sepia': '📜',
+      'grayscale': '🪙',
+      'invert': '🔮',
+      'blur': '🌫️',
+      'colored': '🌈',
+      'fancy': '✨'
+    };
+    return emojiMap[name] || '🎨';
   }
 
-  onChangeFilter(): void {
-    this.webrtcService.cycleFilter();
+  onStart(): void {
+    this.webrtcService.startCamera();
   }
 
   onSnap(): void {
@@ -289,13 +515,5 @@ export class FilterControlsComponent {
 
   onToggleAudio(): void {
     this.audioService.toggleMute();
-  }
-
-  onDownloadSingle(): void {
-    this.webrtcService.downloadSinglePhoto();
-  }
-
-  onDownloadFilmStrip(): void {
-    this.webrtcService.downloadFilmStrip();
   }
 }

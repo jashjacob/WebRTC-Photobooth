@@ -10,71 +10,89 @@ import { AudioService } from '../../services/audio.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="film-strip-card">
+      
+      <!-- Studio Header -->
       <div class="card-header">
-        <h2>🎞️ Vertical 4-Shot Film Strip</h2>
-        <p class="subtitle">Customizable themes, timestamps, and high-res PNG collage</p>
+        <div class="header-text-group">
+          <h2>🎞️ Film Strip Studio</h2>
+          <p class="subtitle">Customize theme, caption, and export your 35mm collage</p>
+        </div>
+        @if (webrtcService.capturedPhotos().length > 0) {
+          <button class="clear-session-btn" (click)="onClearPhotos()" title="Clear and retake photos">
+            🗑️ Retake
+          </button>
+        }
       </div>
 
-      <!-- Theme Selector Tabs -->
-      <div class="theme-selector">
-        <label class="section-label">Choose Strip Theme:</label>
-        <div class="theme-buttons">
+      <!-- Theme Selector Swatches -->
+      <div class="theme-selector-section">
+        <label class="section-label">🎨 Strip Theme & Border Style:</label>
+        <div class="theme-swatch-grid">
           @for (themeKey of themeKeys; track themeKey) {
             <button 
-              class="theme-btn" 
+              type="button"
+              class="theme-chip" 
               [class.active]="webrtcService.selectedThemeKey() === themeKey"
-              [ngClass]="themeKey"
               (click)="onSelectTheme(themeKey)"
+              [title]="webrtcService.themes[themeKey].label"
             >
-              {{ webrtcService.themes[themeKey].label }}
+              <span class="theme-dot" [style.background-color]="webrtcService.themes[themeKey].bgColor" [style.border-color]="webrtcService.themes[themeKey].frameBorderColor"></span>
+              <span class="theme-text">{{ webrtcService.themes[themeKey].label }}</span>
             </button>
           }
         </div>
       </div>
 
-      <!-- Customization Controls -->
-      <div class="controls-panel">
-        <div class="input-group">
-          <label for="stripText">Footer Title / Text:</label>
+      <!-- Caption & Date Customization Box -->
+      <div class="customization-deck">
+        <div class="input-field-group">
+          <label for="stripText">✍️ Custom Footer Title:</label>
           <input 
             id="stripText" 
             type="text" 
             [ngModel]="webrtcService.customFooterText()" 
             (ngModelChange)="onTextChange($event)"
-            placeholder="e.g. PHOTOBOOTH MEMORIES"
-            maxlength="30"
+            placeholder="e.g. PARTY MEMORIES 2026"
+            maxlength="32"
           />
         </div>
 
-        <div class="toggle-group">
-          <label class="checkbox-label">
+        <div class="checkbox-field-group">
+          <label class="cute-checkbox-label">
             <input 
               type="checkbox" 
               [checked]="webrtcService.includeTimestamp()" 
               (change)="onToggleTimestamp()" 
             />
-            Render Date & Timestamp
+            <span class="check-box-custom"></span>
+            Include Timestamp
           </label>
         </div>
       </div>
 
-      <!-- Captured Photos Thumbnails Strip -->
-      <div class="thumbnails-container">
-        <div class="thumbnails-header">
-          <span>Captured Shots ({{ webrtcService.capturedPhotos().length }} / 4)</span>
-          @if (webrtcService.capturedPhotos().length > 0) {
-            <button class="clear-btn" (click)="onClearPhotos()">Clear All</button>
-          }
+      <!-- Burst Progress Indicator Thumbnails (1 to 4) -->
+      <div class="burst-slots-panel">
+        <div class="slots-header">
+          <span class="slots-title">📸 Session Shots ({{ webrtcService.capturedPhotos().length }} / 4)</span>
+          <span class="slots-hint">
+            @if (webrtcService.capturedPhotos().length === 4) {
+              ✨ Complete! Ready to print
+            } @else if (webrtcService.isCapturing()) {
+              ⏳ Capturing sequence...
+            } @else {
+              Ready for 4-shot burst
+            }
+          </span>
         </div>
-        <div class="thumbnails-grid">
+        <div class="slots-grid">
           @for (slot of [0, 1, 2, 3]; track slot) {
-            <div class="thumb-box" [class.filled]="webrtcService.capturedPhotos()[slot]">
+            <div class="slot-box" [class.filled]="webrtcService.capturedPhotos()[slot]">
               @if (webrtcService.capturedPhotos()[slot]) {
                 <img [src]="webrtcService.capturedPhotos()[slot]" [alt]="'Shot ' + (slot + 1)" />
-                <span class="slot-tag">#{{ slot + 1 }}</span>
+                <span class="slot-badge">#{{ slot + 1 }}</span>
               } @else {
-                <div class="empty-thumb">
-                  <span>📸</span>
+                <div class="empty-slot-content">
+                  <span class="empty-camera-icon">📷</span>
                   <small>Shot {{ slot + 1 }}</small>
                 </div>
               }
@@ -83,193 +101,220 @@ import { AudioService } from '../../services/audio.service';
         </div>
       </div>
 
-      <!-- Main Film Strip Canvas Preview -->
-      <div class="strip-preview-wrapper">
+      <!-- Generated Film Strip Canvas Output -->
+      <div class="strip-output-container">
         @if (webrtcService.filmStripDataUrl()) {
-          <div class="canvas-image-container">
+          <!-- Printed Film Strip with Slide-in Animation -->
+          <div class="film-strip-printout print-slide-in">
             <img 
               [src]="webrtcService.filmStripDataUrl()" 
-              alt="Vertical Film Strip Preview" 
+              alt="Vertical 4-Shot Film Strip" 
               class="film-strip-img" 
             />
           </div>
 
-          <!-- Download Action Buttons -->
-          <div class="download-actions">
-            <button class="btn btn-download-strip" (click)="onDownloadStrip()">
-              📥 Download Vertical Film Strip PNG
+          <!-- Quick Action Buttons -->
+          <div class="action-buttons-stack">
+            <button class="btn btn-download-strip pulse-glow" (click)="onDownloadStrip()">
+              📥 Download Film Strip PNG
             </button>
-            <button class="btn btn-download-single" (click)="onDownloadSingle()">
-              📸 Download Latest Shot PNG
-            </button>
+            
+            <div class="secondary-btn-row">
+              <button class="btn btn-secondary-action" (click)="copyToClipboard()">
+                {{ copySuccess ? '✅ Copied to Clipboard!' : '📋 Copy Image' }}
+              </button>
+              <button class="btn btn-secondary-action" (click)="onDownloadSingle()">
+                📸 Save Latest Shot
+              </button>
+            </div>
           </div>
         } @else {
-          <div class="empty-preview-placeholder">
-            <div class="placeholder-icon">🎞️</div>
-            <h3>No Film Strip Generated Yet</h3>
-            <p>Start a 4-photo burst capture or take snapshots to generate your vertical film strip collage!</p>
+          <!-- Empty State Graphic -->
+          <div class="empty-strip-hero">
+            <div class="hero-graphic">🎞️</div>
+            <h3>Your Film Strip Will Appear Here</h3>
+            <p>Start a <strong>4-Shot Burst</strong> on the left to capture your photos and automatically generate your vintage vertical collage!</p>
           </div>
         }
       </div>
+
     </div>
   `,
   styles: [`
     .film-strip-card {
-      font-family: 'Nunito', sans-serif;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
       color: #5a4a6a;
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.15);
-      border: 1px solid rgba(255, 158, 187, 0.3);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(255, 158, 187, 0.15);
+      border: 1px solid rgba(255, 158, 187, 0.4);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
     }
 
     .card-header h2 {
       margin: 0 0 4px 0;
-      font-size: 1.5rem;
-      background: linear-gradient(45deg, #ff9ebb, #c19ef5);
+      font-size: 1.45rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff9ebb 0%, #c19ef5 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
       margin: 0;
-      font-size: 0.88rem;
-      color: #5a4a6a;
-    }
-
-    .section-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #5a4a6a;
-      margin-bottom: 8px;
-    }
-
-    /* Theme Buttons */
-    .theme-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-    }
-
-    .theme-btn {
-      padding: 8px 12px;
       font-size: 0.82rem;
-      font-weight: 700;
-      border-radius: 25px;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-      font-family: 'Nunito', sans-serif;
-    }
-
-    .theme-btn.classic-white {
-      background: #ffffff;
-      color: #5a4a6a;
-      border-color: #ff9ebb;
-    }
-
-    .theme-btn.film-black {
-      background: #334155;
-      color: #ffffff;
-    }
-
-    .theme-btn.cyber-cyan {
-      background: #06b6d4;
-      color: #ffffff;
-    }
-
-    .theme-btn.retro-yellow {
-      background: #f59e0b;
-      color: #ffffff;
-    }
-
-    .theme-btn.sakura-blossom {
-      background: #fbcfe8;
-      color: #831843;
-    }
-
-    .theme-btn.kawaii-paws {
-      background: #ffe4e6;
-      color: #9f1239;
-    }
-
-    .theme-btn.y2k-sparkle {
-      background: #e9d5ff;
-      color: #581c87;
-    }
-
-    .theme-btn.washi-tape {
-      background: #fef3c7;
-      color: #78350f;
-    }
-
-    .theme-btn.rainbow-sherbet {
-      background: linear-gradient(135deg, #fbcfe8, #fef08a, #bae6fd);
-      color: #1e3a8a;
-    }
-
-    .theme-btn.vintage-stamp {
-      background: #e2e8f0;
-      color: #334155;
-    }
-
-    .theme-btn.active {
-      transform: translateY(-2px);
-      box-shadow: 0 0 12px rgba(255, 158, 187, 0.6);
-      border-color: #ff9ebb !important;
-    }
-
-    /* Controls Panel */
-    .controls-panel {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      background: #fff5f7;
-      padding: 14px 18px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 158, 187, 0.3);
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .input-group label {
-      font-size: 0.8rem;
-      color: #5a4a6a;
+      color: #8a7a9a;
       font-weight: 600;
     }
 
-    .input-group input {
-      padding: 8px 12px;
-      background: #faf0ff;
-      border: 1px solid rgba(255, 158, 187, 0.3);
-      border-radius: 8px;
-      color: #5a4a6a;
-      font-size: 0.9rem;
+    .clear-session-btn {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
       font-family: 'Nunito', sans-serif;
     }
 
-    .toggle-group {
-      display: flex;
-      align-items: center;
+    .clear-session-btn:hover {
+      background: #fecaca;
+      transform: translateY(-1px);
     }
 
-    .checkbox-label {
+    /* Theme Selector */
+    .theme-selector-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .theme-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .theme-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1.5px solid #fed7e2;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #5a4a6a;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+      font-family: 'Nunito', sans-serif;
+      text-align: left;
+    }
+
+    .theme-chip:hover {
+      transform: translateY(-2px);
+      border-color: #ff9ebb;
+      background: #fff5f7;
+    }
+
+    .theme-chip.active {
+      background: linear-gradient(135deg, #ff9ebb 0%, #c19ef5 100%);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 10px rgba(255, 158, 187, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .theme-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid;
+      flex-shrink: 0;
+    }
+
+    .theme-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Customization Deck */
+    .customization-deck {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      background: #fff5f7;
+      padding: 12px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 158, 187, 0.35);
+    }
+
+    .input-field-group {
+      flex: 1;
+      min-width: 180px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-field-group label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #718096;
+    }
+
+    .input-field-group input {
+      padding: 8px 12px;
+      background: #ffffff;
+      border: 1.5px solid #fed7e2;
+      border-radius: 12px;
+      color: #5a4a6a;
       font-size: 0.85rem;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .input-field-group input:focus {
+      outline: none;
+      border-color: #ff9ebb;
+      box-shadow: 0 0 0 3px rgba(255, 158, 187, 0.2);
+    }
+
+    .checkbox-field-group {
+      display: flex;
+      align-items: center;
+      padding-top: 14px;
+    }
+
+    .cute-checkbox-label {
+      font-size: 0.82rem;
+      font-weight: 700;
       color: #5a4a6a;
       cursor: pointer;
       display: flex;
@@ -277,187 +322,224 @@ import { AudioService } from '../../services/audio.service';
       gap: 8px;
     }
 
-    /* Thumbnails */
-    .thumbnails-container {
-      background: #fff5f7;
-      padding: 14px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 158, 187, 0.3);
+    /* Burst Slots Panel */
+    .burst-slots-panel {
+      background: #ffffff;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid #fed7e2;
     }
 
-    .thumbnails-header {
+    .slots-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
-      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+
+    .slots-title {
+      font-weight: 800;
       color: #5a4a6a;
-      margin-bottom: 10px;
     }
 
-    .clear-btn {
-      background: transparent;
-      border: none;
-      color: #ff9ebb;
-      font-size: 0.78rem;
+    .slots-hint {
       font-weight: 700;
-      cursor: pointer;
-      text-decoration: underline;
-      font-family: 'Nunito', sans-serif;
+      color: #a855f7;
     }
 
-    .thumbnails-grid {
+    .slots-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
-    .thumb-box {
+    .slot-box {
       aspect-ratio: 4/3;
-      background: #ffffff;
-      border: 2px dashed #ff9ebb;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
       border-radius: 12px;
       overflow: hidden;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
     }
 
-    .thumb-box.filled {
+    .slot-box.filled {
       border-style: solid;
       border-color: #ff9ebb;
+      box-shadow: 0 3px 8px rgba(255, 158, 187, 0.2);
     }
 
-    .thumb-box img {
+    .slot-box img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .slot-tag {
+    .slot-badge {
       position: absolute;
       bottom: 4px;
       right: 4px;
-      background: rgba(255, 158, 187, 0.8);
+      background: rgba(90, 74, 106, 0.8);
       color: #ffffff;
       font-size: 0.65rem;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-weight: bold;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 6px;
     }
 
-    .empty-thumb {
+    .empty-slot-content {
       text-align: center;
-      color: #c19ef5;
+      color: #94a3b8;
     }
 
-    .empty-thumb span {
-      font-size: 1.2rem;
+    .empty-camera-icon {
+      font-size: 1.1rem;
       display: block;
     }
 
-    .empty-thumb small {
+    .empty-slot-content small {
       font-size: 0.65rem;
+      font-weight: 700;
     }
 
-    /* Strip Preview Wrapper */
-    .strip-preview-wrapper {
+    /* Output Section */
+    .strip-output-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 16px;
     }
 
-    .canvas-image-container {
-      max-height: 580px;
+    .film-strip-printout {
+      max-height: 480px;
       overflow-y: auto;
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.2);
-      border: 2px solid rgba(255, 158, 187, 0.3);
+      box-shadow: 0 12px 30px rgba(90, 74, 106, 0.18);
+      border: 4px solid #ffffff;
       background: #ffffff;
-      padding: 10px;
+      padding: 6px;
     }
 
     .film-strip-img {
       display: block;
-      width: 280px;
+      width: 240px;
       height: auto;
       border-radius: 8px;
     }
 
-    .empty-preview-placeholder {
-      padding: 40px 20px;
+    .print-slide-in {
+      animation: printSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes printSlideDown {
+      0% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .empty-strip-hero {
+      padding: 32px 20px;
       text-align: center;
-      background: #faf0ff;
-      border-radius: 16px;
+      background: #fff5f7;
+      border-radius: 18px;
       width: 100%;
-      border: 2px dashed #c19ef5;
+      border: 2px dashed #fed7e2;
+      box-sizing: border-box;
     }
 
-    .placeholder-icon {
-      font-size: 3rem;
-      margin-bottom: 10px;
+    .hero-graphic {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
     }
 
-    .empty-preview-placeholder h3 {
+    .empty-strip-hero h3 {
       margin: 0 0 6px 0;
       color: #5a4a6a;
+      font-size: 1.05rem;
+      font-weight: 800;
     }
 
-    .empty-preview-placeholder p {
+    .empty-strip-hero p {
       margin: 0;
-      font-size: 0.85rem;
-      color: #5a4a6a;
+      font-size: 0.82rem;
+      color: #8a7a9a;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.4;
     }
 
-    /* Download Buttons */
-    .download-actions {
+    /* Actions Stack */
+    .action-buttons-stack {
       display: flex;
       flex-direction: column;
       gap: 10px;
       width: 100%;
-      max-width: 360px;
+      max-width: 320px;
     }
 
     .btn {
       padding: 12px 18px;
       border: none;
-      border-radius: 25px;
-      font-weight: 700;
+      border-radius: 18px;
+      font-weight: 800;
       font-size: 0.92rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       text-align: center;
       font-family: 'Nunito', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .btn-download-strip {
-      background: linear-gradient(45deg, #98d8a8, #87ceeb);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(152, 216, 168, 0.4);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
     }
 
     .btn-download-strip:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(152, 216, 168, 0.6);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
     }
 
-    .btn-download-single {
-      background: linear-gradient(45deg, #87ceeb, #c19ef5);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(135, 206, 235, 0.4);
+    .secondary-btn-row {
+      display: flex;
+      gap: 8px;
     }
 
-    .btn-download-single:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(135, 206, 235, 0.6);
+    .btn-secondary-action {
+      flex: 1;
+      background: #ffffff;
+      border: 1.5px solid #fed7e2;
+      color: #5a4a6a;
+      font-size: 0.8rem;
+      padding: 8px 10px;
+    }
+
+    .btn-secondary-action:hover {
+      background: #fff5f7;
+      border-color: #ff9ebb;
+      transform: translateY(-1px);
     }
   `]
 })
 export class FilmStripPreviewComponent {
   readonly webrtcService = inject(WebRtcService);
   readonly audioService = inject(AudioService);
+
+  copySuccess = false;
 
   readonly themeKeys: FilmStripThemeKey[] = [
     'sakura-blossom',
@@ -494,5 +576,25 @@ export class FilmStripPreviewComponent {
 
   onDownloadSingle(): void {
     this.webrtcService.downloadSinglePhoto('photobooth-single.png');
+  }
+
+  async copyToClipboard(): Promise<void> {
+    const dataUrl = this.webrtcService.filmStripDataUrl();
+    if (!dataUrl) return;
+
+    try {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      this.copySuccess = true;
+      setTimeout(() => {
+        this.copySuccess = false;
+      }, 2500);
+    } catch (err) {
+      console.warn('Clipboard copy failed, falling back to download:', err);
+      this.onDownloadStrip();
+    }
   }
 }

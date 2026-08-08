@@ -2,7 +2,6 @@ import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CameraPreviewComponent } from './components/camera-preview/camera-preview.component';
 import { FilterControlsComponent } from './components/filter-controls/filter-controls.component';
-import { FilmStripComponent } from './components/film-strip/film-strip.component';
 import { FilmStripPreviewComponent } from './components/film-strip-preview/film-strip-preview.component';
 import { WebRtcService } from './services/webrtc.service';
 
@@ -13,7 +12,6 @@ import { WebRtcService } from './services/webrtc.service';
     CommonModule, 
     CameraPreviewComponent, 
     FilterControlsComponent, 
-    FilmStripComponent,
     FilmStripPreviewComponent
   ],
   template: `
@@ -24,14 +22,16 @@ import { WebRtcService } from './services/webrtc.service';
           class="progress-bar" 
           [style.width.%]="webrtcService.progressValue()"
         >
-          {{ webrtcService.progressText() }}
+          <span class="progress-label">{{ webrtcService.progressText() }}</span>
         </div>
       </div>
 
       <main class="main-content">
+        <!-- Brand Header -->
         <header class="app-header">
+          <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
           <h1>✨ Kawaii Photobooth ✨</h1>
-          <p class="tagline">4-Shot Burst Capture & Customizable Vertical Film Strip Generator</p>
+          <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
         </header>
 
         @if (webrtcService.errorMessage()) {
@@ -40,8 +40,9 @@ import { WebRtcService } from './services/webrtc.service';
           </div>
         }
 
+        <!-- 2-Column Photobooth Studio Layout -->
         <div class="photobooth-grid">
-          <!-- Left Column: Camera Stage & Controls -->
+          <!-- Left Column: Camera Stage & Live Filter Deck -->
           <section class="stage-section">
             <app-camera-preview #cameraPreview></app-camera-preview>
             
@@ -51,14 +52,11 @@ import { WebRtcService } from './services/webrtc.service';
             ></app-filter-controls>
           </section>
 
-          <!-- Right Column: Vertical Film Strip Studio -->
+          <!-- Right Column: Vertical Film Strip Studio & Customizer -->
           <section class="strip-section">
             <app-film-strip-preview></app-film-strip-preview>
           </section>
         </div>
-
-        <!-- Standalone Film Strip Component Section -->
-        <app-film-strip></app-film-strip>
       </main>
     </div>
   `,
@@ -82,39 +80,43 @@ import { WebRtcService } from './services/webrtc.service';
       content: '';
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-image: radial-gradient(circle, #ffb6c1 1px, transparent 1px);
-      background-size: 30px 30px;
-      opacity: 0.15;
+      background-image: radial-gradient(circle, #ffb6c1 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      opacity: 0.18;
       pointer-events: none;
       z-index: 0;
     }
 
     .progress-bar-wrapper {
       width: 100%;
-      background-color: rgba(255, 182, 193, 0.3);
+      background-color: rgba(255, 182, 193, 0.25);
       height: 28px;
       overflow: hidden;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-      z-index: 1;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+      z-index: 10;
     }
 
     .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #ff9ebb 0%, #ffb347 50%, #87ceeb 100%);
+      background: linear-gradient(90deg, #ff9ebb 0%, #c19ef5 50%, #87ceeb 100%);
       color: #fff;
       font-weight: 800;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       text-align: center;
       line-height: 28px;
-      transition: width 0.3s ease;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
       border-radius: 0 14px 14px 0;
+    }
+
+    .progress-label {
+      padding: 0 12px;
     }
 
     .main-content {
       width: 100%;
-      max-width: 1280px;
-      padding: 24px 16px 40px 16px;
+      max-width: 1200px;
+      padding: 24px 16px 48px 16px;
       box-sizing: border-box;
       position: relative;
       z-index: 1;
@@ -125,22 +127,35 @@ import { WebRtcService } from './services/webrtc.service';
       margin-bottom: 24px;
     }
 
+    .header-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #ff6b8b;
+      background: #ffe4e6;
+      border: 1px solid #fecdd3;
+      padding: 3px 14px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+      letter-spacing: 0.8px;
+    }
+
     .app-header h1 {
       font-size: 2.8rem;
       margin: 0 0 6px 0;
-      background: linear-gradient(135deg, #ff9ebb 0%, #c19ef5 50%, #87ceeb 100%);
+      background: linear-gradient(135deg, #ff6b8b 0%, #a855f7 50%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       font-weight: 900;
       letter-spacing: -0.5px;
-      filter: drop-shadow(0 2px 4px rgba(255,158,187,0.3));
+      filter: drop-shadow(0 2px 4px rgba(255, 107, 139, 0.2));
     }
 
     .tagline {
       margin: 0;
-      font-size: 1.05rem;
-      color: #b08dba;
+      font-size: 1rem;
+      color: #8a7a9a;
       font-weight: 700;
     }
 
@@ -151,28 +166,27 @@ import { WebRtcService } from './services/webrtc.service';
       border-radius: 16px;
       margin-bottom: 20px;
       text-align: center;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
     }
 
     .photobooth-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 32px;
-      margin-bottom: 24px;
+      gap: 28px;
+      align-items: start;
     }
 
     @media (min-width: 960px) {
       .photobooth-grid {
-        grid-template-columns: 1fr 1fr;
-        align-items: start;
+        grid-template-columns: 1.05fr 0.95fr;
       }
     }
 
     .stage-section, .strip-section {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
   `]
 })

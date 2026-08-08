@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { AudioService } from './audio.service';
+import confetti from 'canvas-confetti';
 
 export interface FilterInfo {
   name: string;
@@ -191,11 +192,21 @@ export class WebRtcService {
       this.errorMessage.set(null);
       let mediaStream: MediaStream;
 
+      const constraints: MediaStreamConstraints = {
+        video: {
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          facingMode: 'user',
+          frameRate: { ideal: 30, max: 60 }
+        },
+        audio: false
+      };
+
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       } else if ((navigator as any).webkitGetUserMedia) {
         mediaStream = await new Promise((resolve, reject) => {
-          (navigator as any).webkitGetUserMedia({ video: { width: 1280, height: 720 } }, resolve, reject);
+          (navigator as any).webkitGetUserMedia(constraints, resolve, reject);
         });
       } else {
         throw new Error('WebRTC getUserMedia is not supported in this browser.');
@@ -221,6 +232,12 @@ export class WebRtcService {
   cycleFilter(): void {
     const nextIndex = (this.filterIndex() + 1) % this.filters.length;
     this.filterIndex.set(nextIndex);
+  }
+
+  setFilterIndex(index: number): void {
+    if (index >= 0 && index < this.filters.length) {
+      this.filterIndex.set(index);
+    }
   }
 
   setTheme(themeKey: FilmStripThemeKey): void {
@@ -347,6 +364,20 @@ export class WebRtcService {
     this.isCapturing.set(false);
     this.progressValue.set(100);
     this.progressText.set('Burst session complete! Download your film strip below.');
+    this.launchConfetti();
+  }
+
+  launchConfetti(): void {
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFB6C1', '#FF9EBB', '#C19EF5', '#87CEEB', '#FEF08A']
+      });
+    } catch (e) {
+      console.warn('Confetti launch error:', e);
+    }
   }
 
   clearPhotos(): void {
