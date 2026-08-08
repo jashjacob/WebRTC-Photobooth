@@ -177,18 +177,48 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .theme-btn.film-black {
-      background: #c19ef5;
+      background: #334155;
       color: #ffffff;
     }
 
     .theme-btn.cyber-cyan {
-      background: #87ceeb;
+      background: #06b6d4;
       color: #ffffff;
     }
 
     .theme-btn.retro-yellow {
-      background: #ffb347;
+      background: #f59e0b;
       color: #ffffff;
+    }
+
+    .theme-btn.sakura-blossom {
+      background: #fbcfe8;
+      color: #831843;
+    }
+
+    .theme-btn.kawaii-paws {
+      background: #ffe4e6;
+      color: #9f1239;
+    }
+
+    .theme-btn.y2k-sparkle {
+      background: #e9d5ff;
+      color: #581c87;
+    }
+
+    .theme-btn.washi-tape {
+      background: #fef3c7;
+      color: #78350f;
+    }
+
+    .theme-btn.rainbow-sherbet {
+      background: linear-gradient(135deg, #fbcfe8, #fef08a, #bae6fd);
+      color: #1e3a8a;
+    }
+
+    .theme-btn.vintage-stamp {
+      background: #e2e8f0;
+      color: #334155;
     }
 
     .theme-btn.active {
@@ -429,7 +459,18 @@ export class FilmStripPreviewComponent {
   readonly webrtcService = inject(WebRtcService);
   readonly audioService = inject(AudioService);
 
-  readonly themeKeys: FilmStripThemeKey[] = ['classic-white', 'film-black', 'cyber-cyan', 'retro-yellow'];
+  readonly themeKeys: FilmStripThemeKey[] = [
+    'sakura-blossom',
+    'kawaii-paws',
+    'y2k-sparkle',
+    'washi-tape',
+    'rainbow-sherbet',
+    'vintage-stamp',
+    'classic-white',
+    'film-black',
+    'cyber-cyan',
+    'retro-yellow'
+  ];
 
   onSelectTheme(themeKey: FilmStripThemeKey): void {
     this.webrtcService.setTheme(themeKey);
