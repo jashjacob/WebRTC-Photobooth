@@ -4,8 +4,9 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root'
 })
 export class AudioService {
-  readonly isMuted = signal<boolean>(false);
+  readonly isMuted = signal<boolean>(localStorage.getItem('photo_booth_muted') === 'true');
   private audioCtx: AudioContext | null = null;
+  private cachedNoiseBuffer: AudioBuffer | null = null;
 
   private getAudioContext(): AudioContext | null {
     if (this.isMuted()) return null;
@@ -15,19 +16,35 @@ export class AudioService {
         this.audioCtx = new AudioCtxClass();
       }
     }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
+    if (this.audioCtx && (this.audioCtx.state === 'suspended' || (this.audioCtx.state as any) === 'interrupted')) {
+      this.audioCtx.resume().catch(e => console.warn('Audio resume error:', e));
     }
     return this.audioCtx;
   }
 
+  private getNoiseBuffer(ctx: AudioContext): AudioBuffer {
+    if (!this.cachedNoiseBuffer || this.cachedNoiseBuffer.sampleRate !== ctx.sampleRate) {
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08); // 80ms
+      this.cachedNoiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = this.cachedNoiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1; // Pre-synthesized white noise
+      }
+    }
+    return this.cachedNoiseBuffer;
+  }
+
   toggleMute(): boolean {
-    this.isMuted.update(m => !m);
+    this.isMuted.update(m => {
+      const newVal = !m;
+      localStorage.setItem('photo_booth_muted', String(newVal));
+      return newVal;
+    });
     return this.isMuted();
   }
 
   /**
-   * Synthesizes a countdown beep tone (e.g. 880Hz or 1050Hz for final tick)
+   * Synthesizes a countdown beep tone (e.g. 880Hz or 1200Hz for final tick)
    */
   playBeep(frequency: number = 880, duration: number = 0.12, isFinal: boolean = false): void {
     if (this.isMuted()) return;
@@ -55,7 +72,7 @@ export class AudioService {
   }
 
   /**
-   * Synthesizes a realistic camera shutter sound using white noise burst and oscillator pitch drop
+   * Synthesizes a realistic camera shutter sound using pre-cached white noise burst and oscillator pitch drop
    */
   playShutter(): void {
     if (this.isMuted()) return;
@@ -65,16 +82,9 @@ export class AudioService {
 
       const now = ctx.currentTime;
 
-      // 1. Mechanical Noise Burst (Mirror/Shutter click)
-      const bufferSize = ctx.sampleRate * 0.08; // 80ms
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1; // White noise
-      }
-
+      // 1. Mechanical Noise Burst (Mirror/Shutter click) using cached AudioBuffer
       const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this.getNoiseBuffer(ctx);
 
       const noiseFilter = ctx.createBiquadFilter();
       noiseFilter.type = 'highpass';
@@ -118,14 +128,14 @@ export class AudioService {
           osc2.type = 'square';
           osc2.frequency.setValueAtTime(200, clickNow);
           osc2.frequency.exponentialRampToValueAtTime(40, clickNow + 0.04);
-          gain2.gain.setValueAtTime(0.2, clickNow);
+          gain2.gain.setValueAtTime(0.18, clickNow);
           gain2.gain.exponentialRampToValueAtTime(0.001, clickNow + 0.04);
           osc2.connect(gain2);
           gain2.connect(this.audioCtx.destination);
           osc2.start(clickNow);
           osc2.stop(clickNow + 0.04);
         } catch (e) {
-          // ignore error
+          // Ignore secondary click error
         }
       }, 60);
 

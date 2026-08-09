@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 export interface FilterInfo {
   name: string;
   label: string;
+  emoji: string;
   cssStyle: string;
 }
 
@@ -36,6 +37,13 @@ export interface FilmStripTheme {
 })
 export class WebRtcService {
   private readonly audioService = inject(AudioService);
+
+  // Cached reusable canvas instances to prevent memory allocations & GC churn
+  private cachedCollageCanvas: HTMLCanvasElement | null = null;
+  private cachedSnapCanvas: HTMLCanvasElement | null = null;
+
+  // Track active Object URLs to prevent memory leaks
+  private createdObjectUrls: string[] = [];
 
   readonly themes: Record<FilmStripThemeKey, FilmStripTheme> = {
     'classic-white': {
@@ -141,20 +149,20 @@ export class WebRtcService {
   };
 
   readonly filters: FilterInfo[] = [
-    { name: 'none', label: 'Normal', cssStyle: 'none' },
-    { name: 'pastel', label: 'Pastel Glow', cssStyle: 'brightness(1.1) saturate(0.9) sepia(0.15) hue-rotate(-10deg)' },
-    { name: 'dreamy', label: 'Dreamy Bloom', cssStyle: 'brightness(1.15) contrast(0.95) saturate(1.15) sepia(0.1)' },
-    { name: 'vhs', label: '90s VHS Cam', cssStyle: 'contrast(1.15) saturate(1.45) hue-rotate(-15deg) sepia(0.2)' },
-    { name: 'golden-hour', label: 'Golden Hour', cssStyle: 'sepia(0.4) saturate(1.55) hue-rotate(-25deg) brightness(1.05) contrast(1.1)' },
-    { name: 'matcha', label: 'Matcha Film', cssStyle: 'contrast(0.92) brightness(1.08) saturate(0.85) sepia(0.2) hue-rotate(15deg)' },
-    { name: 'bubblegum', label: 'Bubblegum Pop', cssStyle: 'saturate(2.2) contrast(1.2) brightness(1.05) hue-rotate(10deg)' },
-    { name: 'film-noir', label: 'Classic Noir', cssStyle: 'grayscale(1) contrast(1.45) brightness(0.95)' },
-    { name: 'sepia', label: 'Vintage Sepia', cssStyle: 'sepia(1)' },
-    { name: 'grayscale', label: 'Grayscale', cssStyle: 'grayscale(1)' },
-    { name: 'invert', label: 'Invert', cssStyle: 'invert(1)' },
-    { name: 'blur', label: 'Soft Blur', cssStyle: 'blur(3px)' },
-    { name: 'colored', label: 'Psychedelic', cssStyle: 'hue-rotate(180deg) saturate(200%)' },
-    { name: 'fancy', label: 'Fancy Pop', cssStyle: 'contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4)' }
+    { name: 'none', label: 'Normal', emoji: '📷', cssStyle: 'none' },
+    { name: 'pastel', label: 'Pastel Glow', emoji: '🌸', cssStyle: 'brightness(1.1) saturate(0.9) sepia(0.15) hue-rotate(-10deg)' },
+    { name: 'dreamy', label: 'Dreamy Bloom', emoji: '☁️', cssStyle: 'brightness(1.15) contrast(0.95) saturate(1.15) sepia(0.1)' },
+    { name: 'vhs', label: '90s VHS Cam', emoji: '📼', cssStyle: 'contrast(1.15) saturate(1.45) hue-rotate(-15deg) sepia(0.2)' },
+    { name: 'golden-hour', label: 'Golden Hour', emoji: '🌅', cssStyle: 'sepia(0.4) saturate(1.55) hue-rotate(-25deg) brightness(1.05) contrast(1.1)' },
+    { name: 'matcha', label: 'Matcha Film', emoji: '🍵', cssStyle: 'contrast(0.92) brightness(1.08) saturate(0.85) sepia(0.2) hue-rotate(15deg)' },
+    { name: 'bubblegum', label: 'Bubblegum Pop', emoji: '🍬', cssStyle: 'saturate(2.2) contrast(1.2) brightness(1.05) hue-rotate(10deg)' },
+    { name: 'film-noir', label: 'Classic Noir', emoji: '🖤', cssStyle: 'grayscale(1) contrast(1.45) brightness(0.95)' },
+    { name: 'sepia', label: 'Vintage Sepia', emoji: '📜', cssStyle: 'sepia(1)' },
+    { name: 'grayscale', label: 'Grayscale', emoji: '🪙', cssStyle: 'grayscale(1)' },
+    { name: 'invert', label: 'Invert', emoji: '🔮', cssStyle: 'invert(1)' },
+    { name: 'blur', label: 'Soft Blur', emoji: '🌫️', cssStyle: 'blur(3px)' },
+    { name: 'colored', label: 'Psychedelic', emoji: '🌈', cssStyle: 'hue-rotate(180deg) saturate(200%)' },
+    { name: 'fancy', label: 'Fancy Pop', emoji: '✨', cssStyle: 'contrast(1.3) grayscale(0.6) saturate(10) sepia(0.4)' }
   ];
 
   // Core Stream & Filter Signals
@@ -165,6 +173,9 @@ export class WebRtcService {
   readonly errorMessage = signal<string | null>(null);
   readonly progressText = signal<string>('Ready for Photobooth');
   readonly progressValue = signal<number>(0);
+
+  // Computed Transform for smooth GPU progress bar animation
+  readonly progressTransform = computed(() => `scaleX(${this.progressValue() / 100})`);
 
   // Countdown & Burst Signals
   readonly countdownSeconds = signal<number>(3); // 3s or 5s
@@ -185,7 +196,6 @@ export class WebRtcService {
   readonly currentFilterName = computed(() => this.currentFilter().name);
   readonly currentFilterStyle = computed(() => this.currentFilter().cssStyle);
   readonly currentTheme = computed(() => this.themes[this.selectedThemeKey()]);
-  readonly isCountingDown = computed(() => this.countdownValue() !== null && this.countdownValue()! > 0);
 
   async startCamera(): Promise<void> {
     try {
@@ -212,26 +222,43 @@ export class WebRtcService {
         throw new Error('WebRTC getUserMedia is not supported in this browser.');
       }
 
+      mediaStream.getVideoTracks().forEach(track => {
+        track.onended = () => {
+          this.errorMessage.set('Camera was disconnected.');
+          this.stopCamera();
+        };
+      });
+
       this.stream.set(mediaStream);
       this.progressText.set('Camera active! Select countdown and click 4-Shot Burst.');
       this.progressValue.set(25);
     } catch (err: any) {
       console.error('Error starting camera stream:', err);
-      this.errorMessage.set(err.message || 'Could not access webcam.');
+      let errorMsg = err.message || 'Could not access webcam.';
+      if (err.name === 'NotAllowedError') {
+        errorMsg = 'Camera access was denied. Please allow camera permissions in your browser.';
+      } else if (err.name === 'NotFoundError') {
+        errorMsg = 'No camera found. Please connect a webcam.';
+      } else if (err.name === 'NotReadableError') {
+        errorMsg = 'Camera is already in use by another application or tab.';
+      }
+      this.errorMessage.set(errorMsg);
     }
   }
 
   stopCamera(): void {
+    this.isCapturing.set(false);
     const currentStream = this.stream();
     if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
+      currentStream.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (e) {
+          // Ignore track stop error
+        }
+      });
       this.stream.set(null);
     }
-  }
-
-  cycleFilter(): void {
-    const nextIndex = (this.filterIndex() + 1) % this.filters.length;
-    this.filterIndex.set(nextIndex);
   }
 
   setFilterIndex(index: number): void {
@@ -242,7 +269,7 @@ export class WebRtcService {
 
   setTheme(themeKey: FilmStripThemeKey): void {
     this.selectedThemeKey.set(themeKey);
-    if (this.capturedPhotos().length > 0) {
+    if (!this.isCapturing() && this.capturedPhotos().length > 0) {
       this.renderFilmStripCollage();
     }
   }
@@ -255,14 +282,14 @@ export class WebRtcService {
 
   setCustomFooterText(text: string): void {
     this.customFooterText.set(text);
-    if (this.capturedPhotos().length > 0) {
+    if (!this.isCapturing() && this.capturedPhotos().length > 0) {
       this.renderFilmStripCollage();
     }
   }
 
   toggleTimestamp(): void {
     this.includeTimestamp.update(v => !v);
-    if (this.capturedPhotos().length > 0) {
+    if (!this.isCapturing() && this.capturedPhotos().length > 0) {
       this.renderFilmStripCollage();
     }
   }
@@ -270,8 +297,8 @@ export class WebRtcService {
   /**
    * Triggers single photo snapshot with countdown timer and audio-visual shutter
    */
-  async triggerSingleSnap(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<string | null> {
-    if (!video || !canvas || this.isCapturing()) return null;
+  async triggerSingleSnap(video: HTMLVideoElement): Promise<string | null> {
+    if (!video || this.isCapturing()) return null;
 
     this.isCapturing.set(true);
     const delaySec = this.countdownSeconds();
@@ -285,7 +312,11 @@ export class WebRtcService {
 
     this.countdownValue.set(0);
     this.triggerFlashAndShutter();
-    const dataUrl = this.takeFrameSnapshot(video, canvas);
+    
+    // Yield to let browser render flash frame smoothly
+    await new Promise(r => requestAnimationFrame(r));
+
+    const dataUrl = await this.takeFrameSnapshotAsync(video);
     this.capturedImageDataUrl.set(dataUrl);
 
     if (dataUrl) {
@@ -311,18 +342,18 @@ export class WebRtcService {
   /**
    * Executes a 4-photo burst capture sequence with 3s/5s countdowns and flash effects
    */
-  async startBurstCapture(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<void> {
-    if (!video || !canvas || this.isCapturing() || !this.isStreaming()) return;
+  async startBurstCapture(video: HTMLVideoElement): Promise<void> {
+    if (!video || this.isCapturing() || !this.isStreaming()) return;
 
     this.isCapturing.set(true);
-    this.capturedPhotos.set([]); // Reset photos for new burst session
-    this.filmStripDataUrl.set(null);
+    this.clearPhotos(); // Clean previous session memory
 
     const photos: string[] = [];
     const totalShots = 4;
     const delaySec = this.countdownSeconds();
 
     for (let i = 1; i <= totalShots; i++) {
+      if (!this.isCapturing() || !this.isStreaming()) break;
       this.burstIndex.set(i);
       this.progressValue.set(Math.round(((i - 1) / totalShots) * 100));
 
@@ -338,20 +369,23 @@ export class WebRtcService {
       this.countdownValue.set(0);
       this.triggerFlashAndShutter();
 
-      const dataUrl = this.takeFrameSnapshot(video, canvas);
+      // Yield for instant flash render
+      await new Promise(r => requestAnimationFrame(r));
+
+      const dataUrl = await this.takeFrameSnapshotAsync(video);
       if (dataUrl) {
         photos.push(dataUrl);
         this.capturedPhotos.set([...photos]);
         this.capturedImageDataUrl.set(dataUrl);
       }
 
-      await this.sleep(400);
+      await this.sleep(300);
       this.countdownValue.set(null);
 
       // Pause between shots if not the last one
       if (i < totalShots) {
         this.progressText.set(`Pose for shot ${i + 1}!`);
-        await this.sleep(800);
+        await this.sleep(700);
       }
     }
 
@@ -376,11 +410,24 @@ export class WebRtcService {
         colors: ['#FFB6C1', '#FF9EBB', '#C19EF5', '#87CEEB', '#FEF08A']
       });
     } catch (e) {
-      console.warn('Confetti launch error:', e);
+      // Confetti fallback
     }
   }
 
   clearPhotos(): void {
+    this.isCapturing.set(false);
+    // Revoke any created Object URLs to prevent memory leaks
+    if (this.createdObjectUrls.length > 0) {
+      this.createdObjectUrls.forEach(url => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          // Ignore revoke error
+        }
+      });
+      this.createdObjectUrls = [];
+    }
+
     this.capturedPhotos.set([]);
     this.capturedImageDataUrl.set(null);
     this.filmStripDataUrl.set(null);
@@ -392,41 +439,85 @@ export class WebRtcService {
     this.audioService.playShutter();
     setTimeout(() => {
       this.isFlashActive.set(false);
-    }, 280);
+    }, 250);
   }
 
-  takeFrameSnapshot(video: HTMLVideoElement, canvas: HTMLCanvasElement): string | null {
-    if (!video || !canvas) return null;
+  /**
+   * Hardware-accelerated async frame snapshot capture using WebP encoding
+   */
+  async takeFrameSnapshotAsync(video: HTMLVideoElement): Promise<string | null> {
+    if (!video) return null;
 
+    if (!this.cachedSnapCanvas) {
+      this.cachedSnapCanvas = document.createElement('canvas');
+    }
+
+    const canvas = this.cachedSnapCanvas;
     canvas.width = 640;
     canvas.height = 480;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: false });
     if (!ctx) return null;
 
     ctx.save();
     const filterStyle = this.currentFilterStyle();
-    if (filterStyle && filterStyle !== 'none') {
-      ctx.filter = filterStyle;
+    ctx.filter = filterStyle && filterStyle !== 'none' ? filterStyle : 'none';
+
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const canvasRatio = canvas.width / canvas.height;
+    let drawWidth = canvas.width;
+    let drawHeight = canvas.height;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (videoRatio > canvasRatio) {
+      drawWidth = canvas.height * videoRatio;
+      offsetX = (canvas.width - drawWidth) / 2;
     } else {
-      ctx.filter = 'none';
+      drawHeight = canvas.width / videoRatio;
+      offsetY = (canvas.height - drawHeight) / 2;
     }
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Fast path: use createImageBitmap if available in browser
+    if ('createImageBitmap' in window) {
+      try {
+        const bitmap = await createImageBitmap(video);
+        ctx.drawImage(bitmap, offsetX, offsetY, drawWidth, drawHeight);
+        bitmap.close();
+      } catch (e) {
+        ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+      }
+    } else {
+      ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+    }
     ctx.restore();
 
-    return canvas.toDataURL('image/png');
+    // Async blob encoding off main thread with WebP
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          return resolve(canvas.toDataURL('image/webp', 0.90));
+        }
+        const objectUrl = URL.createObjectURL(blob);
+        this.createdObjectUrls.push(objectUrl);
+        resolve(objectUrl);
+      }, 'image/webp', 0.90);
+    });
   }
 
   /**
-   * HTML5 Canvas 2D Vertical Film Strip Collage Generator
+   * HTML5 Canvas 2D Vertical Film Strip Collage Generator using cached canvas and async ImageBitmap decoding
    */
   async renderFilmStripCollage(): Promise<string | null> {
     const photos = this.capturedPhotos();
     if (photos.length === 0) return null;
 
     const theme = this.currentTheme();
-    const canvas = document.createElement('canvas');
+
+    if (!this.cachedCollageCanvas) {
+      this.cachedCollageCanvas = document.createElement('canvas');
+    }
+    const canvas = this.cachedCollageCanvas;
 
     // High resolution canvas dimensions
     const width = 600;
@@ -442,11 +533,14 @@ export class WebRtcService {
     const framesTotalHeight = numFrames * photoHeight + (numFrames - 1) * frameGap;
     const height = headerHeight + framesTotalHeight + footerHeight;
 
-    canvas.width = width;
-    canvas.height = height;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+
+    ctx.scale(dpr, dpr);
 
     // 1. Draw Background
     if (theme.key === 'rainbow-sherbet') {
@@ -516,10 +610,23 @@ export class WebRtcService {
     ctx.lineTo(width - sideMargin, 92);
     ctx.stroke();
 
-    // 5. Load and Draw Photo Frames
+    // 5. Load and Draw Photo Frames using async createImageBitmap
     const loadedImages = await Promise.all(
-      photos.slice(0, 4).map(src => this.loadImage(src))
+      photos.slice(0, 4).map(async src => {
+        if ('createImageBitmap' in window) {
+          try {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            return await createImageBitmap(blob);
+          } catch (e) {
+            return this.loadImage(src);
+          }
+        }
+        return this.loadImage(src);
+      })
     );
+
+    if (this.capturedPhotos() !== photos) return null;
 
     let startY = headerHeight;
 
@@ -548,13 +655,11 @@ export class WebRtcService {
 
       // Theme-specific photo decorations
       if (theme.key === 'washi-tape') {
-        // Draw cute pastel tape on top-left and top-right corners
         ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 182, 193, 0.75)' : 'rgba(186, 230, 253, 0.75)';
         ctx.fillRect(sideMargin - 10, frameY - 6, 45, 16);
         ctx.fillStyle = i % 2 === 0 ? 'rgba(254, 240, 138, 0.75)' : 'rgba(233, 213, 255, 0.75)';
         ctx.fillRect(sideMargin + photoWidth - 35, frameY - 6, 45, 16);
       } else if (theme.key === 'y2k-sparkle') {
-        // Draw sparkle stars at frame corners
         ctx.fillStyle = '#C084FC';
         ctx.font = '16px sans-serif';
         ctx.fillText('✦', sideMargin + 14, frameY + 22);
@@ -605,9 +710,26 @@ export class WebRtcService {
     ctx.fillText('||| | ||||| ||| |||| || ||||| |||', width / 2, footerStartY + 82);
     ctx.fillText(`#PB-${Date.now().toString().slice(-6)}`, width / 2, footerStartY + 96);
 
-    const dataUrl = canvas.toDataURL('image/png');
-    this.filmStripDataUrl.set(dataUrl);
-    return dataUrl;
+    loadedImages.forEach(img => {
+      if (img && 'close' in img && typeof (img as any).close === 'function') {
+        (img as any).close();
+      }
+    });
+
+    // Non-blocking async Blob output
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          const fallback = canvas.toDataURL('image/png');
+          this.filmStripDataUrl.set(fallback);
+          return resolve(fallback);
+        }
+        const dataUrl = URL.createObjectURL(blob);
+        this.createdObjectUrls.push(dataUrl);
+        this.filmStripDataUrl.set(dataUrl);
+        resolve(dataUrl);
+      }, 'image/png');
+    });
   }
 
   downloadSinglePhoto(filename: string = 'photobooth-snap.png'): void {

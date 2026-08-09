@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WebRtcService } from '../../services/webrtc.service';
 import { AudioService } from '../../services/audio.service';
@@ -7,6 +7,7 @@ import { AudioService } from '../../services/audio.service';
   selector: 'app-filter-controls',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="controls-container">
       
@@ -25,8 +26,9 @@ import { AudioService } from '../../services/audio.service';
               [disabled]="webrtcService.isCapturing()"
               (click)="webrtcService.setFilterIndex(i)"
               [title]="'Select ' + f.label + ' filter'"
+              [attr.aria-pressed]="webrtcService.filterIndex() === i"
             >
-              <span class="chip-icon">{{ getFilterEmoji(f.name) }}</span>
+              <span class="chip-icon">{{ f.emoji }}</span>
               <span class="chip-label">{{ f.label }}</span>
             </button>
           }
@@ -48,6 +50,7 @@ import { AudioService } from '../../services/audio.service';
                 [class.active]="webrtcService.countdownSeconds() === 3"
                 [disabled]="webrtcService.isCapturing()"
                 (click)="webrtcService.setCountdownSeconds(3)"
+                [attr.aria-pressed]="webrtcService.countdownSeconds() === 3"
               >
                 3s
               </button>
@@ -57,6 +60,7 @@ import { AudioService } from '../../services/audio.service';
                 [class.active]="webrtcService.countdownSeconds() === 5"
                 [disabled]="webrtcService.isCapturing()"
                 (click)="webrtcService.setCountdownSeconds(5)"
+                [attr.aria-pressed]="webrtcService.countdownSeconds() === 5"
               >
                 5s
               </button>
@@ -91,6 +95,7 @@ import { AudioService } from '../../services/audio.service';
               [class.muted]="audioService.isMuted()"
               (click)="onToggleAudio()"
               [title]="audioService.isMuted() ? 'Unmute countdown audio' : 'Mute countdown audio'"
+              [attr.aria-pressed]="audioService.isMuted()"
             >
               {{ audioService.isMuted() ? '🔇 Muted' : '🔊 Sound On' }}
             </button>
@@ -107,7 +112,6 @@ import { AudioService } from '../../services/audio.service';
             [disabled]="!webrtcService.isStreaming() || webrtcService.isCapturing()" 
             (click)="onBurst()"
           >
-            <div class="shutter-glow-ring"></div>
             <div class="shutter-inner-content">
               <span class="shutter-icon">📸</span>
               <div class="shutter-text-stack">
@@ -180,7 +184,7 @@ import { AudioService } from '../../services/audio.service';
     .active-filter-indicator {
       font-size: 0.82rem;
       font-weight: 800;
-      color: #ff6b8b;
+      color: #be123c;
       background: #ffe4e6;
       padding: 2px 10px;
       border-radius: 12px;
@@ -208,7 +212,7 @@ import { AudioService } from '../../services/audio.service';
       font-size: 0.82rem;
       font-weight: 700;
       color: #5a4a6a;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
       flex-shrink: 0;
       font-family: 'Nunito', sans-serif;
@@ -288,7 +292,7 @@ import { AudioService } from '../../services/audio.service';
       font-weight: 800;
       color: #64748b;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
       font-family: 'Nunito', sans-serif;
     }
 
@@ -317,7 +321,7 @@ import { AudioService } from '../../services/audio.service';
       font-weight: 800;
       border: none;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
       font-family: 'Nunito', sans-serif;
     }
 
@@ -370,13 +374,13 @@ import { AudioService } from '../../services/audio.service';
     .arcade-shutter-btn {
       flex: 1;
       position: relative;
-      background: linear-gradient(135deg, #ff6b8b 0%, #ff8e53 100%);
+      background: linear-gradient(135deg, #e11d48 0%, #ea580c 100%);
       border: none;
       border-radius: 20px;
       padding: 14px 20px;
       cursor: pointer;
       box-shadow: 0 8px 20px rgba(255, 107, 139, 0.4);
-      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
       color: #ffffff;
       font-family: 'Nunito', sans-serif;
       overflow: hidden;
@@ -400,14 +404,28 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .arcade-shutter-btn.capturing {
-      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-      animation: shutterPulse 1.2s infinite;
+      background: linear-gradient(135deg, #7e22ce 0%, #db2777 100%);
     }
 
-    @keyframes shutterPulse {
-      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
-      70% { box-shadow: 0 0 0 16px rgba(168, 85, 247, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+    .arcade-shutter-btn.capturing::after {
+      content: '';
+      position: absolute;
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      border-radius: 24px;
+      border: 3px solid #ec4899;
+      animation: gpuPulse 1.2s infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gpuPulse {
+      0% {
+        transform: scale(0.96);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1.12);
+        opacity: 0;
+      }
     }
 
     .shutter-inner-content {
@@ -415,6 +433,8 @@ import { AudioService } from '../../services/audio.service';
       align-items: center;
       justify-content: center;
       gap: 12px;
+      position: relative;
+      z-index: 1;
     }
 
     .shutter-icon {
@@ -455,7 +475,7 @@ import { AudioService } from '../../services/audio.service';
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 4px 10px rgba(255, 158, 187, 0.15);
       font-family: 'Nunito', sans-serif;
       white-space: nowrap;
@@ -480,26 +500,6 @@ export class FilterControlsComponent {
 
   @Output() snapClicked = new EventEmitter<void>();
   @Output() burstClicked = new EventEmitter<void>();
-
-  getFilterEmoji(name: string): string {
-    const emojiMap: Record<string, string> = {
-      'none': '📷',
-      'pastel': '🌸',
-      'dreamy': '☁️',
-      'vhs': '📼',
-      'golden-hour': '🌅',
-      'matcha': '🍵',
-      'bubblegum': '🍬',
-      'film-noir': '🖤',
-      'sepia': '📜',
-      'grayscale': '🪙',
-      'invert': '🔮',
-      'blur': '🌫️',
-      'colored': '🌈',
-      'fancy': '✨'
-    };
-    return emojiMap[name] || '🎨';
-  }
 
   onStart(): void {
     this.webrtcService.startCamera();

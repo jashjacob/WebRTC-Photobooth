@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service';
@@ -8,6 +8,7 @@ import { AudioService } from '../../services/audio.service';
   selector: 'app-film-strip-preview',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="film-strip-card">
       
@@ -74,7 +75,7 @@ import { AudioService } from '../../services/audio.service';
       <div class="burst-slots-panel">
         <div class="slots-header">
           <span class="slots-title">📸 Session Shots ({{ webrtcService.capturedPhotos().length }} / 4)</span>
-          <span class="slots-hint">
+          <span class="slots-hint" aria-live="polite">
             @if (webrtcService.capturedPhotos().length === 4) {
               ✨ Complete! Ready to print
             } @else if (webrtcService.isCapturing()) {
@@ -102,7 +103,7 @@ import { AudioService } from '../../services/audio.service';
       </div>
 
       <!-- Generated Film Strip Canvas Output -->
-      <div class="strip-output-container">
+      <div class="strip-output-container" aria-live="polite">
         @if (webrtcService.filmStripDataUrl()) {
           <!-- Printed Film Strip with Slide-in Animation -->
           <div class="film-strip-printout print-slide-in">

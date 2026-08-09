@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, EffectRef, effect, inject, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, effect, inject, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WebRtcService } from '../../services/webrtc.service';
 
@@ -6,9 +6,9 @@ import { WebRtcService } from '../../services/webrtc.service';
   selector: 'app-camera-preview',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="camera-preview-card">
-      <!-- Container without duplicate filter class or expensive backdrop-filter -->
       <div class="video-container">
         <video 
           #videoElement 
@@ -18,24 +18,15 @@ import { WebRtcService } from '../../services/webrtc.service';
           [ngClass]="webrtcService.currentFilterName()"
         ></video>
 
-        <!-- Hidden canvas for processing frame snapshots -->
-        <canvas #canvasElement style="display: none;"></canvas>
-
-        <!-- Screen Flash Overlay -->
-        <div 
-          class="screen-flash-overlay" 
-          [class.active]="webrtcService.isFlashActive()"
-        ></div>
-
         <!-- Countdown Overlay Badge -->
         @if (webrtcService.countdownValue() !== null) {
-          <div class="countdown-overlay">
+          <div class="countdown-overlay" aria-live="polite">
             @if (webrtcService.countdownValue()! > 0) {
               <div class="countdown-number pop-animation">
                 {{ webrtcService.countdownValue() }}
               </div>
             } @else {
-              <div class="cheese-text flash-animation">
+              <div class="cheese-text">
                 📸 CHEESE!
               </div>
             }
@@ -44,14 +35,14 @@ import { WebRtcService } from '../../services/webrtc.service';
 
         <!-- Burst Shot Counter Badge -->
         @if (webrtcService.isCapturing()) {
-          <div class="burst-badge">
+          <div class="burst-badge" aria-live="polite">
             <span class="pulse-dot"></span>
             Shot {{ webrtcService.burstIndex() }} / 4
           </div>
         }
 
         <!-- Active Filter Watermark Tag -->
-        <div class="filter-tag">
+        <div class="filter-tag" aria-live="polite">
           {{ webrtcService.currentFilter().label }}
         </div>
       </div>
@@ -84,27 +75,7 @@ import { WebRtcService } from '../../services/webrtc.service';
       object-fit: cover;
       display: block;
       transform: translateZ(0);
-      will-change: filter;
       backface-visibility: hidden;
-    }
-
-    /* Flash Animation Overlay */
-    .screen-flash-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #ffffff;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.05s ease-out;
-      z-index: 10;
-    }
-
-    .screen-flash-overlay.active {
-      opacity: 0.95;
-      transition: opacity 0.01s ease-in;
     }
 
     /* Countdown Overlay */
@@ -208,46 +179,56 @@ import { WebRtcService } from '../../services/webrtc.service';
 })
 export class CameraPreviewComponent implements OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
-  @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
   readonly webrtcService = inject(WebRtcService);
-  private streamEffect: EffectRef;
 
   constructor() {
-    this.streamEffect = effect(() => {
+    effect((onCleanup) => {
       const stream = this.webrtcService.stream();
+      let objectUrl: string | null = null;
+
       if (this.videoElement && this.videoElement.nativeElement) {
         const video = this.videoElement.nativeElement;
         if ('srcObject' in video) {
           video.srcObject = stream;
+        } else if (stream) {
+          objectUrl = URL.createObjectURL(stream as any);
+          (video as any).src = objectUrl;
         } else {
-          (video as any).src = stream ? URL.createObjectURL(stream as any) : '';
+          (video as any).src = '';
         }
       }
+
+      onCleanup(() => {
+        if (objectUrl) {
+          try {
+            URL.revokeObjectURL(objectUrl);
+          } catch (e) {
+            // Ignore revoke error
+          }
+        }
+      });
     });
   }
 
   takeSnapshot(): Promise<string | null> {
-    if (this.videoElement && this.canvasElement) {
-      return this.webrtcService.triggerSingleSnap(
-        this.videoElement.nativeElement,
-        this.canvasElement.nativeElement
-      );
+    if (this.videoElement) {
+      return this.webrtcService.triggerSingleSnap(this.videoElement.nativeElement);
     }
     return Promise.resolve(null);
   }
 
   startBurst(): Promise<void> {
-    if (this.videoElement && this.canvasElement) {
-      return this.webrtcService.startBurstCapture(
-        this.videoElement.nativeElement,
-        this.canvasElement.nativeElement
-      );
+    if (this.videoElement) {
+      return this.webrtcService.startBurstCapture(this.videoElement.nativeElement);
     }
     return Promise.resolve();
   }
 
   ngOnDestroy(): void {
-    this.streamEffect.destroy();
+    this.webrtcService.stopCamera();
+    if (this.videoElement?.nativeElement) {
+      this.videoElement.nativeElement.srcObject = null;
+    }
   }
 }

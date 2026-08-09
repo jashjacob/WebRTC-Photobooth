@@ -1,4 +1,4 @@
-import { Component, ViewChild, inject } from '@angular/core';
+import { Component, ViewChild, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CameraPreviewComponent } from './components/camera-preview/camera-preview.component';
 import { FilterControlsComponent } from './components/filter-controls/filter-controls.component';
@@ -14,15 +14,24 @@ import { WebRtcService } from './services/webrtc.service';
     FilterControlsComponent, 
     FilmStripPreviewComponent
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="app-container">
+      
+      <!-- Full Page Studio White Flash Overlay -->
+      <div 
+        class="full-page-flash-overlay" 
+        [class.active]="webrtcService.isFlashActive()"
+      ></div>
+
       <!-- Session Progress Bar Header -->
       <div class="progress-bar-wrapper">
         <div 
           class="progress-bar" 
-          [style.width.%]="webrtcService.progressValue()"
-        >
-          <span class="progress-label">{{ webrtcService.progressText() }}</span>
+          [style.transform]="webrtcService.progressTransform()"
+        ></div>
+        <div class="progress-label-overlay">
+          {{ webrtcService.progressText() }}
         </div>
       </div>
 
@@ -61,8 +70,6 @@ import { WebRtcService } from './services/webrtc.service';
     </div>
   `,
   styles: [`
-    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
-
     .app-container {
       min-height: 100vh;
       display: flex;
@@ -73,6 +80,26 @@ import { WebRtcService } from './services/webrtc.service';
       color: #5a4a6a;
       font-family: 'Nunito', sans-serif;
       position: relative;
+    }
+
+    /* Full-Page Studio Flash Overlay (Illuminates face from screen light) */
+    .full-page-flash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s cubic-bezier(0.1, 0.9, 0.2, 1);
+      z-index: 99999;
+      will-change: opacity;
+    }
+
+    .full-page-flash-overlay.active {
+      opacity: 1;
+      transition: opacity 0.02s ease-in;
     }
 
     /* Subtle dot pattern overlay */
@@ -88,6 +115,7 @@ import { WebRtcService } from './services/webrtc.service';
     }
 
     .progress-bar-wrapper {
+      position: relative;
       width: 100%;
       background-color: rgba(255, 182, 193, 0.25);
       height: 28px;
@@ -97,20 +125,27 @@ import { WebRtcService } from './services/webrtc.service';
     }
 
     .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
       height: 100%;
       background: linear-gradient(90deg, #ff9ebb 0%, #c19ef5 50%, #87ceeb 100%);
-      color: #fff;
+      transform-origin: left;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+
+    .progress-label-overlay {
+      position: relative;
+      z-index: 2;
+      color: #ffffff;
       font-weight: 800;
       font-size: 0.82rem;
       text-align: center;
       line-height: 28px;
-      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-      border-radius: 0 14px 14px 0;
-    }
-
-    .progress-label {
-      padding: 0 12px;
+      text-shadow: 0 1px 2px rgba(90, 74, 106, 0.4);
+      pointer-events: none;
     }
 
     .main-content {
@@ -193,4 +228,44 @@ import { WebRtcService } from './services/webrtc.service';
 export class AppComponent {
   @ViewChild('cameraPreview') cameraPreview!: CameraPreviewComponent;
   readonly webrtcService = inject(WebRtcService);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+      return;
+    }
+    if (this.webrtcService.isCapturing()) {
+      return;
+    }
+
+    switch (event.code) {
+      case 'Space':
+        event.preventDefault();
+        this.cameraPreview?.startBurst();
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.cameraPreview?.takeSnapshot();
+        break;
+      case 'ArrowRight': {
+        event.preventDefault();
+        const current = this.webrtcService.filterIndex();
+        const max = this.webrtcService.filters.length - 1;
+        this.webrtcService.setFilterIndex(current === max ? 0 : current + 1);
+        break;
+      }
+      case 'ArrowLeft': {
+        event.preventDefault();
+        const current = this.webrtcService.filterIndex();
+        const max = this.webrtcService.filters.length - 1;
+        this.webrtcService.setFilterIndex(current === 0 ? max : current - 1);
+        break;
+      }
+      case 'Escape':
+        event.preventDefault();
+        this.webrtcService.clearPhotos();
+        break;
+    }
+  }
 }
