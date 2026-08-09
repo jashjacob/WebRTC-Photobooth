@@ -74,7 +74,8 @@ import { WebRtcService } from '../../services/webrtc.service';
       height: 100%;
       object-fit: cover;
       display: block;
-      transform: translateZ(0);
+      /* GPU promotion and horizontal mirror for natural selfie camera view */
+      transform: translateZ(0) scaleX(-1);
       backface-visibility: hidden;
     }
 

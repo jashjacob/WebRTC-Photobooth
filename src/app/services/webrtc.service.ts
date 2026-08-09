@@ -345,8 +345,8 @@ export class WebRtcService {
   async startBurstCapture(video: HTMLVideoElement): Promise<void> {
     if (!video || this.isCapturing() || !this.isStreaming()) return;
 
-    this.isCapturing.set(true);
-    this.clearPhotos(); // Clean previous session memory
+    this.clearPhotos(); // Clean previous session memory (which resets isCapturing to false)
+    this.isCapturing.set(true); // Now lock the state for the new burst sequence
 
     const photos: string[] = [];
     const totalShots = 4;
@@ -460,6 +460,11 @@ export class WebRtcService {
     if (!ctx) return null;
 
     ctx.save();
+    
+    // Mirror the canvas context horizontally to match the mirrored camera preview
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+    
     const filterStyle = this.currentFilterStyle();
     ctx.filter = filterStyle && filterStyle !== 'none' ? filterStyle : 'none';
 
