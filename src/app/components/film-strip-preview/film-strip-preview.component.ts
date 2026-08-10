@@ -543,16 +543,17 @@ export class FilmStripPreviewComponent {
   copySuccess = false;
 
   readonly themeKeys: FilmStripThemeKey[] = [
+    'seoul-minimal',
+    'y2k-holographic',
+    'analog-film',
     'sakura-blossom',
     'kawaii-paws',
-    'y2k-sparkle',
     'washi-tape',
+    'y2k-sparkle',
     'rainbow-sherbet',
-    'vintage-stamp',
     'classic-white',
     'film-black',
-    'cyber-cyan',
-    'retro-yellow'
+    'cyber-cyan'
   ];
 
   onSelectTheme(themeKey: FilmStripThemeKey): void {

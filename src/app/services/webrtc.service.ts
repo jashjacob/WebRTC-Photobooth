@@ -10,6 +10,9 @@ export interface FilterInfo {
 }
 
 export type FilmStripThemeKey = 
+  | 'seoul-minimal'
+  | 'y2k-holographic'
+  | 'analog-film'
   | 'classic-white' 
   | 'film-black' 
   | 'cyber-cyan' 
@@ -46,6 +49,36 @@ export class WebRtcService {
   private createdObjectUrls: string[] = [];
 
   readonly themes: Record<FilmStripThemeKey, FilmStripTheme> = {
+    'seoul-minimal': {
+      key: 'seoul-minimal',
+      label: 'Seoul Minimal',
+      bgColor: '#F7F3EE', // Soft Beige
+      frameBorderColor: '#FFFFFF', // Inner crisp borders
+      sprocketColor: 'transparent',
+      textColor: '#474747',
+      accentColor: '#C9BFB4',
+      headerTitle: 'LIFE FOUR CUTS'
+    },
+    'y2k-holographic': {
+      key: 'y2k-holographic',
+      label: 'Y2K Holographic',
+      bgColor: '#FFC0CB', // Pastel baby pink base (gradient handled in Canvas)
+      frameBorderColor: '#000000', // 90s cyber stroke
+      sprocketColor: 'transparent',
+      textColor: '#ff00ff', // Magenta
+      accentColor: '#b6ffff', // Cyan
+      headerTitle: 'CYBER BOOTH'
+    },
+    'analog-film': {
+      key: 'analog-film',
+      label: 'Analog Film',
+      bgColor: '#0A0A0A', // Jet Black
+      frameBorderColor: '#0A0A0A', // Seamless
+      sprocketColor: '#FFFFFF', // Used for sprocket holes
+      textColor: '#EAB308', // Faded yellow
+      accentColor: '#36312D', // Taupe
+      headerTitle: 'KODAK 400'
+    },
     'classic-white': {
       key: 'classic-white',
       label: 'Classic White',
@@ -185,7 +218,7 @@ export class WebRtcService {
   readonly isFlashActive = signal<boolean>(false);
 
   // Film Strip Settings Signals
-  readonly selectedThemeKey = signal<FilmStripThemeKey>('sakura-blossom');
+  readonly selectedThemeKey = signal<FilmStripThemeKey>('seoul-minimal');
   readonly customFooterText = signal<string>('PHOTOBOOTH SESSION');
   readonly includeTimestamp = signal<boolean>(true);
   readonly filmStripDataUrl = signal<string | null>(null);
@@ -556,10 +589,24 @@ export class WebRtcService {
       grad.addColorStop(0.75, '#E0F2FE');
       grad.addColorStop(1, '#F3E8FF');
       ctx.fillStyle = grad;
+    } else if (theme.key === 'y2k-holographic') {
+      const grad = ctx.createLinearGradient(0, 0, width, height);
+      grad.addColorStop(0, '#ffb6ff');
+      grad.addColorStop(0.5, '#b6ffff');
+      grad.addColorStop(1, '#e0b6ff');
+      ctx.fillStyle = grad;
     } else {
       ctx.fillStyle = theme.bgColor;
     }
     ctx.fillRect(0, 0, width, height);
+    
+    // Add analog film grain/noise
+    if (theme.key === 'analog-film') {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let i=0; i<3000; i++) {
+        ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+      }
+    }
 
     // 2. Draw Outer Border Glow / Styling
     if (theme.key === 'cyber-cyan') {
@@ -583,29 +630,46 @@ export class WebRtcService {
     const leftHoleX = 22;
     const rightHoleX = width - 22 - holeWidth;
 
-    ctx.fillStyle = theme.sprocketColor;
-    for (let y = 15; y < height - 15; y += holeSpacing) {
-      if (theme.key === 'kawaii-paws') {
-        // Cute mini paw or rounded dot
-        ctx.beginPath();
-        ctx.arc(leftHoleX + holeWidth / 2, y + holeHeight / 2, 7, 0, Math.PI * 2);
-        ctx.arc(rightHoleX + holeWidth / 2, y + holeHeight / 2, 7, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        this.drawRoundedRect(ctx, leftHoleX, y, holeWidth, holeHeight, holeRadius);
-        this.drawRoundedRect(ctx, rightHoleX, y, holeWidth, holeHeight, holeRadius);
+    if (theme.sprocketColor !== 'transparent') {
+      ctx.fillStyle = theme.sprocketColor;
+      for (let y = 15; y < height - 15; y += holeSpacing) {
+        if (theme.key === 'kawaii-paws') {
+          // Cute mini paw or rounded dot
+          ctx.beginPath();
+          ctx.arc(leftHoleX + holeWidth / 2, y + holeHeight / 2, 7, 0, Math.PI * 2);
+          ctx.arc(rightHoleX + holeWidth / 2, y + holeHeight / 2, 7, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          this.drawRoundedRect(ctx, leftHoleX, y, holeWidth, holeHeight, holeRadius);
+          this.drawRoundedRect(ctx, rightHoleX, y, holeWidth, holeHeight, holeRadius);
+        }
       }
     }
 
     // 4. Draw Header
     ctx.fillStyle = theme.textColor;
-    ctx.font = 'bold 24px "Nunito", "Courier New", monospace, sans-serif';
+    
+    if (theme.key === 'seoul-minimal') {
+      ctx.font = 'bold 24px "Montserrat", "Helvetica", sans-serif';
+      ctx.letterSpacing = '2px';
+    } else if (theme.key === 'analog-film') {
+      ctx.font = 'bold 24px "Courier New", monospace';
+    } else if (theme.key === 'y2k-holographic') {
+      ctx.font = '900 28px "Comic Sans MS", sans-serif';
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 4;
+    } else {
+      ctx.font = 'bold 24px "Nunito", "Courier New", monospace, sans-serif';
+    }
+    
     ctx.textAlign = 'center';
     ctx.fillText(theme.headerTitle, width / 2, 52);
+    ctx.letterSpacing = '0px'; // reset
+    ctx.shadowBlur = 0; // reset
 
     ctx.fillStyle = theme.accentColor;
     ctx.font = 'bold 13px "Nunito", sans-serif';
-    ctx.fillText('★ BURST SHOT SESSION ★', width / 2, 78);
+    ctx.fillText(theme.key === 'analog-film' ? '35MM FILM NEGATIVE' : '★ BURST SHOT SESSION ★', width / 2, 78);
 
     // Header divider line
     ctx.strokeStyle = theme.frameBorderColor;
@@ -655,7 +719,7 @@ export class WebRtcService {
 
       // Photo Frame Stroke
       ctx.strokeStyle = theme.frameBorderColor;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = theme.key === 'y2k-holographic' ? 6 : (theme.key === 'seoul-minimal' ? 4 : (theme.key === 'analog-film' ? 1 : 3));
       ctx.strokeRect(sideMargin, frameY, photoWidth, photoHeight);
 
       // Theme-specific photo decorations
@@ -664,22 +728,31 @@ export class WebRtcService {
         ctx.fillRect(sideMargin - 10, frameY - 6, 45, 16);
         ctx.fillStyle = i % 2 === 0 ? 'rgba(254, 240, 138, 0.75)' : 'rgba(233, 213, 255, 0.75)';
         ctx.fillRect(sideMargin + photoWidth - 35, frameY - 6, 45, 16);
-      } else if (theme.key === 'y2k-sparkle') {
-        ctx.fillStyle = '#C084FC';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('✦', sideMargin + 14, frameY + 22);
-        ctx.fillText('✦', sideMargin + photoWidth - 14, frameY + photoHeight - 10);
+      } else if (theme.key === 'y2k-sparkle' || theme.key === 'y2k-holographic') {
+        ctx.fillStyle = theme.key === 'y2k-holographic' ? '#00ffff' : '#C084FC';
+        ctx.font = '20px sans-serif';
+        ctx.fillText(i % 2 === 0 ? '✨' : '💖', sideMargin + 14, frameY + 22);
+        ctx.fillText(i % 2 !== 0 ? '✨' : '💖', sideMargin + photoWidth - 14, frameY + photoHeight - 10);
       } else if (theme.key === 'sakura-blossom') {
         ctx.font = '14px sans-serif';
         ctx.fillText('🌸', sideMargin + 16, frameY + 20);
+      } else if (theme.key === 'analog-film') {
+        // Add a subtle vignette overlay to the photo
+        const grad = ctx.createRadialGradient(sideMargin + photoWidth/2, frameY + photoHeight/2, photoHeight/4, sideMargin + photoWidth/2, frameY + photoHeight/2, photoHeight);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.5)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(sideMargin, frameY, photoWidth, photoHeight);
       }
 
       // Frame Number Labels on Film Margin
-      ctx.fillStyle = theme.textColor;
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`0${i + 1} A`, leftHoleX + holeWidth + 6, frameY + 20);
-      ctx.fillText('FUJI 400', rightHoleX - 58, frameY + 20);
+      if (theme.key !== 'seoul-minimal' && theme.key !== 'y2k-holographic') {
+        ctx.fillStyle = theme.textColor;
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`0${i + 1} A`, leftHoleX + holeWidth + 6, frameY + 20);
+        ctx.fillText(theme.key === 'analog-film' ? 'KODAK 400' : 'FUJI 400', rightHoleX - 65, frameY + 20);
+      }
     }
 
     // 6. Draw Footer
