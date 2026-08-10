@@ -746,7 +746,7 @@ export class WebRtcService {
       }
 
       // Frame Number Labels on Film Margin
-      if (theme.key !== 'seoul-minimal' && theme.key !== 'y2k-holographic') {
+      if (theme.key === 'film-black' || theme.key === 'analog-film') {
         ctx.fillStyle = theme.textColor;
         ctx.font = 'bold 11px monospace';
         ctx.textAlign = 'left';
