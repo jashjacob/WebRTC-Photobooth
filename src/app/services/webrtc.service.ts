@@ -330,7 +330,7 @@ export class WebRtcService {
   /**
    * Triggers single photo snapshot with countdown timer and audio-visual shutter
    */
-  async triggerSingleSnap(video: HTMLVideoElement): Promise<string | null> {
+  async triggerSingleSnap(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<string | null> {
     if (!video || this.isCapturing()) return null;
 
     this.isCapturing.set(true);
@@ -349,7 +349,7 @@ export class WebRtcService {
     // Yield to let browser render flash frame smoothly
     await new Promise(r => requestAnimationFrame(r));
 
-    const dataUrl = await this.takeFrameSnapshotAsync(video);
+    const dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
     this.capturedImageDataUrl.set(dataUrl);
 
     if (dataUrl) {
@@ -375,7 +375,7 @@ export class WebRtcService {
   /**
    * Executes a 4-photo burst capture sequence with 3s/5s countdowns and flash effects
    */
-  async startBurstCapture(video: HTMLVideoElement): Promise<void> {
+  async startBurstCapture(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<void> {
     if (!video || this.isCapturing() || !this.isStreaming()) return;
 
     this.clearPhotos(); // Clean previous session memory (which resets isCapturing to false)
@@ -405,7 +405,7 @@ export class WebRtcService {
       // Yield for instant flash render
       await new Promise(r => requestAnimationFrame(r));
 
-      const dataUrl = await this.takeFrameSnapshotAsync(video);
+      const dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
       if (dataUrl) {
         photos.push(dataUrl);
         this.capturedPhotos.set([...photos]);
@@ -478,7 +478,7 @@ export class WebRtcService {
   /**
    * Hardware-accelerated async frame snapshot capture using WebP encoding
    */
-  async takeFrameSnapshotAsync(video: HTMLVideoElement): Promise<string | null> {
+  async takeFrameSnapshotAsync(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<string | null> {
     if (!video) return null;
 
     if (!this.cachedSnapCanvas) {
@@ -529,6 +529,16 @@ export class WebRtcService {
       ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
     }
     ctx.restore();
+
+    // Composite AR overlay if provided
+    if (overlayCanvas) {
+      ctx.save();
+      // Mirror the AR canvas context horizontally to match the mirrored camera snapshot
+      ctx.scale(-1, 1);
+      ctx.translate(-canvas.width, 0);
+      ctx.drawImage(overlayCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
 
     // Async blob encoding off main thread with WebP
     return new Promise(resolve => {

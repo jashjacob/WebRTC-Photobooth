@@ -1,44 +1,110 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FaceTrackingService } from './face-tracking.service';
+import { FilterControlsComponent } from '../components/filter-controls/filter-controls.component';
+import { FilmStripPreviewComponent } from '../components/film-strip-preview/film-strip-preview.component';
+import { WebRtcService } from '../services/webrtc.service';
 
 @Component({
   selector: 'app-pro-booth',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FilterControlsComponent, FilmStripPreviewComponent],
   template: `
     <div class="pro-container">
-      <h2>😎 Pro AR Booth</h2>
-      
-      <div class="camera-wrapper">
-        <video #videoElement autoplay playsinline muted></video>
-        <canvas #canvasElement></canvas>
-        
-        @if (!faceTracking.isReady()) {
-          <div class="loading-overlay">
-            Downloading 5MB AI Models...<br>
-            Please wait
+      <header class="app-header">
+        <div class="header-badge">😎 AI POWERED</div>
+        <h1>✨ PRO AR Booth ✨</h1>
+        <p class="tagline">Real-time Face Tracking & Augmented Reality Masks</p>
+        <button class="btn-primary" (click)="closePro()">← Exit Pro Mode</button>
+      </header>
+
+      <div class="photobooth-grid">
+        <section class="stage-section">
+          <div class="camera-wrapper">
+            <video #videoElement autoplay playsinline muted></video>
+            <canvas #canvasElement></canvas>
+            
+            @if (!faceTracking.isReady()) {
+              <div class="loading-overlay">
+                Downloading 5MB AI Models...<br>
+                Please wait
+              </div>
+            }
           </div>
-        }
-      </div>
-      
-      <div class="controls">
-        <button class="btn btn-primary" (click)="closePro()">← Exit Pro Mode</button>
+          
+          <app-filter-controls 
+            (snapClicked)="takeSnapshot()"
+            (burstClicked)="startBurst()"
+          ></app-filter-controls>
+        </section>
+
+        <section class="strip-section">
+          <app-film-strip-preview></app-film-strip-preview>
+        </section>
       </div>
     </div>
   `,
   styles: [`
     .pro-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 48px 16px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 1;
+    }
+    .app-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #00F3FF;
+      background: #111827;
+      border: 1px solid #00F3FF;
+      padding: 3px 14px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+      letter-spacing: 0.8px;
+    }
+    .app-header h1 {
+      font-size: 2.8rem;
+      margin: 0 0 6px 0;
+      background: linear-gradient(135deg, #00F3FF 0%, #a855f7 50%, #ff6b8b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .tagline {
+      margin: 0 0 16px 0;
+      font-size: 1rem;
+      color: #8a7a9a;
+      font-weight: 700;
+    }
+    .photobooth-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (min-width: 960px) {
+      .photobooth-grid {
+        grid-template-columns: 1.05fr 0.95fr;
+      }
+    }
+    .stage-section, .strip-section {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
+      gap: 16px;
     }
     .camera-wrapper {
       position: relative;
       width: 100%;
-      max-width: 640px;
       aspect-ratio: 4/3;
       border-radius: 20px;
       overflow: hidden;
@@ -92,6 +158,8 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvasElement') canvasRef!: ElementRef<HTMLCanvasElement>;
   
   readonly faceTracking = inject(FaceTrackingService);
+  readonly webrtcService = inject(WebRtcService);
+  
   private stream: MediaStream | null = null;
   private animationFrameId = 0;
   private lastVideoTime = -1;
@@ -116,6 +184,18 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
       this.videoRef.nativeElement.srcObject = this.stream;
     } catch (e) {
       console.error('Camera access denied');
+    }
+  }
+
+  takeSnapshot() {
+    if (this.videoRef && this.canvasRef) {
+      this.webrtcService.triggerSingleSnap(this.videoRef.nativeElement, this.canvasRef.nativeElement);
+    }
+  }
+
+  startBurst() {
+    if (this.videoRef && this.canvasRef) {
+      this.webrtcService.startBurstCapture(this.videoRef.nativeElement, this.canvasRef.nativeElement);
     }
   }
   
