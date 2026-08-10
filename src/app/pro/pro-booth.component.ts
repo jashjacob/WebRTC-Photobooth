@@ -21,7 +21,13 @@ import { WebRtcService } from '../services/webrtc.service';
       <div class="photobooth-grid">
         <section class="stage-section">
           <div class="camera-wrapper">
-            <video #videoElement autoplay playsinline muted></video>
+            <video 
+              #videoElement 
+              autoplay 
+              playsinline 
+              muted
+              [ngClass]="webrtcService.currentFilterName()"
+            ></video>
             <canvas #canvasElement></canvas>
             
             @if (!faceTracking.isReady()) {
