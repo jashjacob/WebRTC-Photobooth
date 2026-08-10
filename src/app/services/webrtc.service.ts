@@ -580,8 +580,23 @@ export class WebRtcService {
 
     ctx.scale(dpr, dpr);
 
+    // Preload HQ Image Overlays
+    let bgImage: HTMLImageElement | null = null;
+    let overlayImage: HTMLImageElement | null = null;
+    try {
+      if (theme.key === 'y2k-holographic') {
+        bgImage = await this.loadImage('assets/overlays/holographic.jpg');
+      } else if (theme.key === 'analog-film') {
+        overlayImage = await this.loadImage('assets/overlays/film-dust.jpg');
+      }
+    } catch (e) {
+      console.warn('Failed to load HQ overlay assets, falling back to CSS primitives');
+    }
+
     // 1. Draw Background
-    if (theme.key === 'rainbow-sherbet') {
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, width, height);
+    } else if (theme.key === 'rainbow-sherbet') {
       const grad = ctx.createLinearGradient(0, 0, width, height);
       grad.addColorStop(0, '#FFE4E6');
       grad.addColorStop(0.25, '#FEF3C7');
@@ -589,19 +604,20 @@ export class WebRtcService {
       grad.addColorStop(0.75, '#E0F2FE');
       grad.addColorStop(1, '#F3E8FF');
       ctx.fillStyle = grad;
-    } else if (theme.key === 'y2k-holographic') {
+    } else if (theme.key === 'y2k-holographic' && !bgImage) {
       const grad = ctx.createLinearGradient(0, 0, width, height);
       grad.addColorStop(0, '#ffb6ff');
       grad.addColorStop(0.5, '#b6ffff');
       grad.addColorStop(1, '#e0b6ff');
       ctx.fillStyle = grad;
-    } else {
+      ctx.fillRect(0, 0, width, height);
+    } else if (!bgImage) {
       ctx.fillStyle = theme.bgColor;
+      ctx.fillRect(0, 0, width, height);
     }
-    ctx.fillRect(0, 0, width, height);
     
-    // Add analog film grain/noise
-    if (theme.key === 'analog-film') {
+    // Add analog film grain/noise (fallback if overlay fails)
+    if (theme.key === 'analog-film' && !overlayImage) {
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
       for (let i=0; i<3000; i++) {
         ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
@@ -787,6 +803,13 @@ export class WebRtcService {
     ctx.font = '10px monospace';
     ctx.fillText('||| | ||||| ||| |||| || ||||| |||', width / 2, footerStartY + 82);
     ctx.fillText(`#PB-${Date.now().toString().slice(-6)}`, width / 2, footerStartY + 96);
+    
+    // 7. Draw Screen-blended Overlay Textures (Dust, Light Leaks)
+    if (overlayImage && theme.key === 'analog-film') {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(overlayImage, 0, 0, width, height);
+      ctx.globalCompositeOperation = 'source-over'; // reset
+    }
 
     loadedImages.forEach(img => {
       if (img && 'close' in img && typeof (img as any).close === 'function') {
