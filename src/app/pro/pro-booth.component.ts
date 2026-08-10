@@ -145,15 +145,17 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
         const leftEye = landmarks[33];
         const rightEye = landmarks[263];
         
-        // Mirroring coordinates because video is mirrored via CSS scaleX(-1)
-        const rx = (1 - rightEye.x) * canvas.width;
-        const lx = (1 - leftEye.x) * canvas.width;
+        // Use raw MediaPipe coordinates.
+        // Because the <canvas> has CSS transform: scaleX(-1) applied to it,
+        // it will automatically mirror our drawing to perfectly match the mirrored <video>.
+        const lx = leftEye.x * canvas.width;
+        const rx = rightEye.x * canvas.width;
         
         const cx = (lx + rx) / 2;
         const cy = (leftEye.y + rightEye.y) / 2 * canvas.height;
         
         // Scale glasses based on face width
-        const width = Math.abs(lx - rx) * 2.8; 
+        const width = Math.abs(rx - lx) * 2.8; 
         const height = width * 0.5;
         
         // Calculate tilt angle of the head
@@ -161,7 +163,7 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
         
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.rotate(-angle); // Rotate in opposite direction due to mirroring
+        ctx.rotate(angle); 
         ctx.drawImage(this.sunglassesImage, -width/2, -height/2, width, height);
         ctx.restore();
       }
