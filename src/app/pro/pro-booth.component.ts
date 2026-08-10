@@ -1,9 +1,22 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FaceTrackingService } from './face-tracking.service';
 import { FilterControlsComponent } from '../components/filter-controls/filter-controls.component';
 import { FilmStripPreviewComponent } from '../components/film-strip-preview/film-strip-preview.component';
 import { WebRtcService } from '../services/webrtc.service';
+
+interface ARMask {
+  id: string;
+  name: string;
+  emoji: string;
+}
+
+const AR_MASKS: ARMask[] = [
+  { id: 'visor', name: 'Cyberpunk Visor', emoji: '🕶️' },
+  { id: 'cat', name: 'Kawaii Cat', emoji: '🐱' },
+  { id: 'blush', name: 'Anime Blush', emoji: '😳' },
+  { id: 'none', name: 'No Mask', emoji: '✖️' },
+];
 
 @Component({
   selector: 'app-pro-booth',
@@ -40,6 +53,15 @@ import { WebRtcService } from '../services/webrtc.service';
                 Please wait
               </div>
             }
+          </div>
+          
+          <div class="ar-mask-selector">
+            <button class="nav-btn" (click)="prevMask()">◀</button>
+            <div class="active-mask">
+              <span class="mask-emoji">{{ activeMask().emoji }}</span>
+              <span class="mask-name">{{ activeMask().name }}</span>
+            </div>
+            <button class="nav-btn" (click)="nextMask()">▶</button>
           </div>
           
           <app-filter-controls 
@@ -144,6 +166,43 @@ import { WebRtcService } from '../services/webrtc.service';
       font-size: 1.2rem;
       z-index: 10;
     }
+    .ar-mask-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #111827;
+      border: 2px solid #00F3FF;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 4px 16px rgba(0, 243, 255, 0.15);
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: #00F3FF;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .nav-btn:hover {
+      transform: scale(1.2);
+    }
+    .active-mask {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mask-emoji {
+      font-size: 2.2rem;
+    }
+    .mask-name {
+      color: #00F3FF;
+      font-weight: 900;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
     .controls {
       margin-top: 20px;
     }
@@ -185,15 +244,24 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   private stream: MediaStream | null = null;
   private animationFrameId = 0;
   private lastVideoTime = -1;
-  private sunglassesImage = new Image();
   private isDestroyed = false;
   hasCameraError = false;
+  
+  readonly masks = AR_MASKS;
+  readonly activeMaskIndex = signal(0);
+  
+  private imgVisor = new Image();
+  private imgCatEarLeft = new Image();
+  private imgCatEarRight = new Image();
+  private imgCatNose = new Image();
   
   onClose = output<void>();
 
   async ngAfterViewInit() {
-    // Basic SVG sunglasses
-    this.sunglassesImage.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><rect x="10" y="10" width="35" height="25" rx="5" fill="black"/><rect x="55" y="10" width="35" height="25" rx="5" fill="black"/><path d="M45 20 Q50 15 55 20" stroke="black" stroke-width="4" fill="none"/></svg>';
+    this.imgVisor.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"><path d="M10,10 L190,10 L170,50 L30,50 Z" fill="rgba(0, 243, 255, 0.4)" stroke="%2300F3FF" stroke-width="4"/><rect x="30" y="20" width="140" height="10" fill="%2300F3FF"/></svg>';
+    this.imgCatEarLeft.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
+    this.imgCatEarRight.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
+    this.imgCatNose.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M20,25 Q50,50 80,25 Q50,0 20,25" fill="pink"/><path d="M10,25 L-20,15 M10,25 L-20,25 M10,25 L-20,35 M90,25 L120,15 M90,25 L120,25 M90,25 L120,35" stroke="white" stroke-width="6"/></svg>';
     
     await this.startCamera();
     if (this.isDestroyed) return;
@@ -235,6 +303,20 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
       this.webrtcService.startBurstCapture(this.videoRef.nativeElement, this.canvasRef.nativeElement);
     }
   }
+
+  activeMask() {
+    return this.masks[this.activeMaskIndex()];
+  }
+
+  nextMask() {
+    const next = (this.activeMaskIndex() + 1) % this.masks.length;
+    this.activeMaskIndex.set(next);
+  }
+
+  prevMask() {
+    const prev = (this.activeMaskIndex() - 1 + this.masks.length) % this.masks.length;
+    this.activeMaskIndex.set(prev);
+  }
   
   renderLoop = () => {
     if (this.isDestroyed) return;
@@ -260,31 +342,94 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
       if (results && results.faceLandmarks.length > 0) {
         const landmarks = results.faceLandmarks[0];
         
-        // MediaPipe landmarks: 33 (left eye corner), 263 (right eye corner)
-        const leftEye = landmarks[33];
-        const rightEye = landmarks[263];
+        const maskId = this.activeMask().id;
         
-        // Use raw MediaPipe coordinates.
-        // Because the <canvas> has CSS transform: scaleX(-1) applied to it,
-        // it will automatically mirror our drawing to perfectly match the mirrored <video>.
-        const lx = leftEye.x * canvas.width;
-        const rx = rightEye.x * canvas.width;
-        
-        const cx = (lx + rx) / 2;
-        const cy = (leftEye.y + rightEye.y) / 2 * canvas.height;
-        
-        // Scale glasses based on face width
-        const width = Math.abs(rx - lx) * 2.8; 
-        const height = width * 0.5;
-        
-        // Calculate tilt angle of the head
-        const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
-        
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(angle); 
-        ctx.drawImage(this.sunglassesImage, -width/2, -height/2, width, height);
-        ctx.restore();
+        if (maskId === 'visor') {
+          const leftEye = landmarks[33];
+          const rightEye = landmarks[263];
+          const lx = leftEye.x * canvas.width;
+          const rx = rightEye.x * canvas.width;
+          const cx = (lx + rx) / 2;
+          const cy = (leftEye.y + rightEye.y) / 2 * canvas.height;
+          const width = Math.abs(rx - lx) * 2.8; 
+          const height = width * 0.4;
+          const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
+          
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(angle); 
+          ctx.drawImage(this.imgVisor, -width/2, -height/2, width, height);
+          ctx.restore();
+          
+        } else if (maskId === 'cat') {
+          // Forehead / Ears
+          const forehead = landmarks[10];
+          const leftForehead = landmarks[21];
+          const rightForehead = landmarks[251];
+          const lx = leftForehead.x * canvas.width;
+          const rx = rightForehead.x * canvas.width;
+          const fx = forehead.x * canvas.width;
+          const fy = forehead.y * canvas.height;
+          const earWidth = Math.abs(rx - lx) * 1.5;
+          const earHeight = earWidth;
+          const angle = Math.atan2(rightForehead.y - leftForehead.y, rightForehead.x - leftForehead.x);
+          
+          ctx.save();
+          ctx.translate(fx, fy - earHeight/2);
+          ctx.rotate(angle);
+          // Draw left ear
+          ctx.drawImage(this.imgCatEarLeft, -earWidth, -earHeight/2, earWidth, earHeight);
+          // Draw right ear
+          ctx.drawImage(this.imgCatEarRight, 0, -earHeight/2, earWidth, earHeight);
+          ctx.restore();
+          
+          // Nose & Whiskers
+          const nose = landmarks[1];
+          const nx = nose.x * canvas.width;
+          const ny = nose.y * canvas.height;
+          const noseWidth = Math.abs(rx - lx) * 1.2;
+          const noseHeight = noseWidth * 0.5;
+          
+          ctx.save();
+          ctx.translate(nx, ny);
+          ctx.rotate(angle);
+          ctx.drawImage(this.imgCatNose, -noseWidth/2, -noseHeight/2, noseWidth, noseHeight);
+          ctx.restore();
+          
+        } else if (maskId === 'blush') {
+          // Cheeks
+          const leftCheek = landmarks[116];
+          const rightCheek = landmarks[345];
+          const lx = leftCheek.x * canvas.width;
+          const ly = leftCheek.y * canvas.height;
+          const rx = rightCheek.x * canvas.width;
+          const ry = rightCheek.y * canvas.height;
+          
+          const angle = Math.atan2(rightCheek.y - leftCheek.y, rightCheek.x - leftCheek.x);
+          const blushWidth = Math.abs(rx - lx) * 0.4;
+          const blushHeight = blushWidth * 0.6;
+          
+          ctx.save();
+          ctx.fillStyle = 'rgba(255, 105, 180, 0.6)';
+          ctx.filter = 'blur(6px)';
+          
+          // Left cheek
+          ctx.translate(lx, ly);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, blushWidth/2, blushHeight/2, 0, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.resetTransform();
+          
+          // Right cheek
+          ctx.translate(rx, ry);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, blushWidth/2, blushHeight/2, 0, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          ctx.restore();
+        }
       }
     }
     this.animationFrameId = requestAnimationFrame(this.renderLoop);
