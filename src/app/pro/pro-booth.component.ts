@@ -30,7 +30,11 @@ import { WebRtcService } from '../services/webrtc.service';
             ></video>
             <canvas #canvasElement></canvas>
             
-            @if (!faceTracking.isReady()) {
+            @if (hasCameraError) {
+              <div class="error-banner">
+                ⚠️ Camera access denied. Please allow camera permissions and reload.
+              </div>
+            } @else if (!faceTracking.isReady()) {
               <div class="loading-overlay">
                 Downloading 5MB AI Models...<br>
                 Please wait
@@ -143,6 +147,18 @@ import { WebRtcService } from '../services/webrtc.service';
     .controls {
       margin-top: 20px;
     }
+    .error-banner {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+      z-index: 20;
+    }
     .btn-primary {
       padding: 12px 24px;
       background: #111827;
@@ -170,6 +186,8 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   private animationFrameId = 0;
   private lastVideoTime = -1;
   private sunglassesImage = new Image();
+  private isDestroyed = false;
+  hasCameraError = false;
   
   onClose = output<void>();
 
@@ -178,18 +196,31 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
     this.sunglassesImage.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><rect x="10" y="10" width="35" height="25" rx="5" fill="black"/><rect x="55" y="10" width="35" height="25" rx="5" fill="black"/><path d="M45 20 Q50 15 55 20" stroke="black" stroke-width="4" fill="none"/></svg>';
     
     await this.startCamera();
+    if (this.isDestroyed) return;
+    
     await this.faceTracking.initialize();
+    if (this.isDestroyed) return;
+    
     this.renderLoop();
   }
   
   async startCamera() {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ 
+      this.hasCameraError = false;
+      const newStream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
       });
+      if (this.isDestroyed) {
+        newStream.getTracks().forEach(t => t.stop());
+        return;
+      }
+      this.stream = newStream;
       this.videoRef.nativeElement.srcObject = this.stream;
     } catch (e) {
-      console.error('Camera access denied');
+      if (!this.isDestroyed) {
+        this.hasCameraError = true;
+      }
+      console.error('Camera access denied', e);
     }
   }
 
@@ -206,6 +237,8 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   }
   
   renderLoop = () => {
+    if (this.isDestroyed) return;
+    
     const video = this.videoRef?.nativeElement;
     const canvas = this.canvasRef?.nativeElement;
     if (!video || !canvas || !this.faceTracking.isReady()) {
@@ -262,6 +295,7 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.isDestroyed = true;
     cancelAnimationFrame(this.animationFrameId);
     if (this.stream) {
       this.stream.getTracks().forEach(t => t.stop());

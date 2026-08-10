@@ -18,7 +18,7 @@ import { WebRtcService } from './services/webrtc.service';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="app-container">
+    <div class="app-container" [class.pro-theme]="mode() === 'pro'">
       @if (mode() === 'standard') {
         <!-- Full Page Studio White Flash Overlay -->
         <div 
@@ -43,7 +43,11 @@ import { WebRtcService } from './services/webrtc.service';
             <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
             <h1>✨ Kawaii Photobooth ✨</h1>
             <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
-            <button class="pro-mode-btn" (click)="mode.set('pro')">Try PRO AR Masks 😎</button>
+            <button 
+              class="pro-mode-btn" 
+              (click)="mode.set('pro')"
+              [disabled]="webrtcService.isCapturing()"
+            >Try PRO AR Masks 😎</button>
           </header>
 
           @if (webrtcService.errorMessage()) {
@@ -72,7 +76,7 @@ import { WebRtcService } from './services/webrtc.service';
         </main>
       } @else {
         @defer {
-          <app-pro-booth (onClose)="mode.set('standard')"></app-pro-booth>
+          <app-pro-booth #proBooth (onClose)="mode.set('standard')"></app-pro-booth>
         } @loading {
           <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
         }
@@ -90,6 +94,17 @@ import { WebRtcService } from './services/webrtc.service';
       color: #5a4a6a;
       font-family: 'Nunito', sans-serif;
       position: relative;
+      transition: background 0.5s ease;
+    }
+
+    /* Dynamic Dark Theme for PRO Mode */
+    .app-container.pro-theme {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #171717 100%);
+    }
+    
+    .app-container.pro-theme::before {
+      background-image: radial-gradient(circle, #00F3FF 1.2px, transparent 1.2px);
+      opacity: 0.05;
     }
 
     /* Full-Page Studio Flash Overlay (Illuminates face from screen light) */
@@ -204,6 +219,31 @@ import { WebRtcService } from './services/webrtc.service';
       font-weight: 700;
     }
 
+    .pro-mode-btn {
+      margin-top: 12px;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #a855f7, #38bdf8);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .pro-mode-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 16px rgba(168, 85, 247, 0.5);
+    }
+    
+    .pro-mode-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+
     .error-banner {
       background: linear-gradient(135deg, #ff6b6b, #ee5a24);
       color: white;
@@ -237,13 +277,13 @@ import { WebRtcService } from './services/webrtc.service';
 })
 export class AppComponent {
   @ViewChild('cameraPreview') cameraPreview!: CameraPreviewComponent;
+  @ViewChild('proBooth') proBooth!: ProBoothComponent;
+  
   readonly webrtcService = inject(WebRtcService);
   readonly mode = signal<'standard' | 'pro'>('standard');
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
-    if (this.mode() === 'pro') return; // Disable hotkeys in PRO mode
-    
     const target = event.target as HTMLElement;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
       return;
@@ -255,11 +295,13 @@ export class AppComponent {
     switch (event.code) {
       case 'Space':
         event.preventDefault();
-        this.cameraPreview?.startBurst();
+        if (this.mode() === 'pro') this.proBooth?.startBurst();
+        else this.cameraPreview?.startBurst();
         break;
       case 'Enter':
         event.preventDefault();
-        this.cameraPreview?.takeSnapshot();
+        if (this.mode() === 'pro') this.proBooth?.takeSnapshot();
+        else this.cameraPreview?.takeSnapshot();
         break;
       case 'ArrowRight': {
         event.preventDefault();
