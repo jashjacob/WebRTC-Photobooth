@@ -1,8 +1,9 @@
-import { Component, ViewChild, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import { Component, ViewChild, inject, ChangeDetectionStrategy, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CameraPreviewComponent } from './components/camera-preview/camera-preview.component';
 import { FilterControlsComponent } from './components/filter-controls/filter-controls.component';
 import { FilmStripPreviewComponent } from './components/film-strip-preview/film-strip-preview.component';
+import { ProBoothComponent } from './pro/pro-booth.component';
 import { WebRtcService } from './services/webrtc.service';
 
 @Component({
@@ -12,61 +13,70 @@ import { WebRtcService } from './services/webrtc.service';
     CommonModule, 
     CameraPreviewComponent, 
     FilterControlsComponent, 
-    FilmStripPreviewComponent
+    FilmStripPreviewComponent,
+    ProBoothComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="app-container">
-      
-      <!-- Full Page Studio White Flash Overlay -->
-      <div 
-        class="full-page-flash-overlay" 
-        [class.active]="webrtcService.isFlashActive()"
-      ></div>
-
-      <!-- Session Progress Bar Header -->
-      <div class="progress-bar-wrapper">
+      @if (mode() === 'standard') {
+        <!-- Full Page Studio White Flash Overlay -->
         <div 
-          class="progress-bar" 
-          [style.transform]="webrtcService.progressTransform()"
+          class="full-page-flash-overlay" 
+          [class.active]="webrtcService.isFlashActive()"
         ></div>
-        <div class="progress-label-overlay">
-          {{ webrtcService.progressText() }}
-        </div>
-      </div>
 
-      <main class="main-content">
-        <!-- Brand Header -->
-        <header class="app-header">
-          <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
-          <h1>✨ Kawaii Photobooth ✨</h1>
-          <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
-        </header>
-
-        @if (webrtcService.errorMessage()) {
-          <div class="error-banner">
-            ⚠️ {{ webrtcService.errorMessage() }}
+        <!-- Session Progress Bar Header -->
+        <div class="progress-bar-wrapper">
+          <div 
+            class="progress-bar" 
+            [style.transform]="webrtcService.progressTransform()"
+          ></div>
+          <div class="progress-label-overlay">
+            {{ webrtcService.progressText() }}
           </div>
-        }
-
-        <!-- 2-Column Photobooth Studio Layout -->
-        <div class="photobooth-grid">
-          <!-- Left Column: Camera Stage & Live Filter Deck -->
-          <section class="stage-section">
-            <app-camera-preview #cameraPreview></app-camera-preview>
-            
-            <app-filter-controls 
-              (snapClicked)="cameraPreview.takeSnapshot()"
-              (burstClicked)="cameraPreview.startBurst()"
-            ></app-filter-controls>
-          </section>
-
-          <!-- Right Column: Vertical Film Strip Studio & Customizer -->
-          <section class="strip-section">
-            <app-film-strip-preview></app-film-strip-preview>
-          </section>
         </div>
-      </main>
+
+        <main class="main-content">
+          <!-- Brand Header -->
+          <header class="app-header">
+            <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
+            <h1>✨ Kawaii Photobooth ✨</h1>
+            <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
+            <button class="pro-mode-btn" (click)="mode.set('pro')">Try PRO AR Masks 😎</button>
+          </header>
+
+          @if (webrtcService.errorMessage()) {
+            <div class="error-banner">
+              ⚠️ {{ webrtcService.errorMessage() }}
+            </div>
+          }
+
+          <!-- 2-Column Photobooth Studio Layout -->
+          <div class="photobooth-grid">
+            <!-- Left Column: Camera Stage & Live Filter Deck -->
+            <section class="stage-section">
+              <app-camera-preview #cameraPreview></app-camera-preview>
+              
+              <app-filter-controls 
+                (snapClicked)="cameraPreview.takeSnapshot()"
+                (burstClicked)="cameraPreview.startBurst()"
+              ></app-filter-controls>
+            </section>
+
+            <!-- Right Column: Vertical Film Strip Studio & Customizer -->
+            <section class="strip-section">
+              <app-film-strip-preview></app-film-strip-preview>
+            </section>
+          </div>
+        </main>
+      } @else {
+        @defer {
+          <app-pro-booth (onClose)="mode.set('standard')"></app-pro-booth>
+        } @loading {
+          <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
+        }
+      }
     </div>
   `,
   styles: [`
@@ -228,9 +238,12 @@ import { WebRtcService } from './services/webrtc.service';
 export class AppComponent {
   @ViewChild('cameraPreview') cameraPreview!: CameraPreviewComponent;
   readonly webrtcService = inject(WebRtcService);
+  readonly mode = signal<'standard' | 'pro'>('standard');
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
+    if (this.mode() === 'pro') return; // Disable hotkeys in PRO mode
+    
     const target = event.target as HTMLElement;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
       return;
