@@ -206,6 +206,7 @@ export class WebRtcService {
   readonly errorMessage = signal<string | null>(null);
   readonly progressText = signal<string>('Ready for Photobooth');
   readonly progressValue = signal<number>(0);
+  readonly sessionId = signal<string>(crypto.randomUUID());
 
   // Computed Transform for smooth GPU progress bar animation
   readonly progressTransform = computed(() => `scaleX(${this.progressValue() / 100})`);
@@ -368,7 +369,7 @@ export class WebRtcService {
 
       if (dataUrl) {
         // Upload immediately in the background
-        this.uploadBackground(dataUrl);
+        this.uploadBackground(dataUrl, 'shot-single');
         
         this.capturedPhotos.update(photos => {
           const next = [...photos, dataUrl!];
@@ -440,7 +441,7 @@ export class WebRtcService {
         const dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
         if (dataUrl) {
           // Upload immediately in the background
-          this.uploadBackground(dataUrl);
+          this.uploadBackground(dataUrl, `shot-${i}`);
 
           photos.push(dataUrl);
           this.capturedPhotos.set([...photos]);
@@ -491,6 +492,8 @@ export class WebRtcService {
   clearPhotos(): void {
     if (this.isCapturing()) return;
     
+    this.sessionId.set(crypto.randomUUID());
+
     // Revoke any created Object URLs to prevent memory leaks
     if (this.createdObjectUrls.length > 0) {
       this.createdObjectUrls.forEach(url => {
@@ -947,12 +950,12 @@ export class WebRtcService {
   /**
    * Upload film strip to Netlify Blobs via serverless function
    */
-  private async uploadBackground(dataUrl: string): Promise<void> {
+  private async uploadBackground(dataUrl: string, fileName: string): Promise<void> {
     try {
       await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: dataUrl })
+        body: JSON.stringify({ image: dataUrl, sessionId: this.sessionId(), fileName })
       });
       console.log('Background upload successful');
     } catch (e) {
@@ -964,7 +967,7 @@ export class WebRtcService {
     const response = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: dataUrl })
+      body: JSON.stringify({ image: dataUrl, sessionId: this.sessionId(), fileName: 'filmstrip' })
     });
     if (!response.ok) {
       throw new Error('Upload failed');

@@ -7,7 +7,7 @@ export default async (req: Request) => {
 
   try {
     const data = await req.json();
-    const { image } = data; // data:image/jpeg;base64,...
+    const { image, sessionId, fileName } = data; // data:image/jpeg;base64,...
 
     if (!image || !image.startsWith('data:image/')) {
       return new Response(JSON.stringify({ error: 'Invalid image format' }), { status: 400 });
@@ -17,11 +17,12 @@ export default async (req: Request) => {
     const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
     const buffer = Buffer.from(base64Data, 'base64');
 
-    const id = crypto.randomUUID();
+    // Use structured key if sessionId is provided, otherwise fallback to UUID
+    const id = sessionId && fileName ? `${sessionId}/${fileName}` : crypto.randomUUID();
     const store = getStore('photobooth-uploads');
 
     await store.set(id, buffer, {
-      metadata: { mimeType }
+      metadata: { mimeType, timestamp: Date.now() }
     });
 
     const host = req.headers.get('host');
