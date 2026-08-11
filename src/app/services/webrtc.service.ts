@@ -938,6 +938,22 @@ export class WebRtcService {
     ctx.fill();
   }
 
+  /**
+   * Upload film strip to Netlify Blobs via serverless function
+   */
+  async uploadFilmStrip(dataUrl: string): Promise<string> {
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+    const data = await response.json();
+    return data.url;
+  }
+
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

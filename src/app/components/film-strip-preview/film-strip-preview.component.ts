@@ -3,10 +3,11 @@ import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service';
 import { AudioService } from '../../services/audio.service';
+import { QrModalComponent } from '../qr-modal/qr-modal.component';
 
 @Component({
     selector: 'app-film-strip-preview',
-    imports: [FormsModule],
+    imports: [FormsModule, QrModalComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="film-strip-card">
@@ -130,9 +131,14 @@ import { AudioService } from '../../services/audio.service';
 
           <!-- Quick Action Buttons -->
           <div class="action-buttons-stack">
-            <button class="btn btn-download-strip pulse-glow" (click)="onDownloadStrip()">
-              📥 Download Film Strip PNG
-            </button>
+            <div class="primary-btn-row">
+              <button class="btn btn-download-strip pulse-glow" (click)="onDownloadStrip()">
+                📥 Download PNG
+              </button>
+              <button class="btn btn-share-strip pulse-glow" (click)="onShareStrip()">
+                📱 Share (QR)
+              </button>
+            </div>
             
             <div class="secondary-btn-row">
               <button class="btn btn-secondary-action" (click)="copyToClipboard()">
@@ -152,6 +158,13 @@ import { AudioService } from '../../services/audio.service';
           </div>
         }
       </div>
+      <app-qr-modal
+        [isOpen]="isShareModalOpen"
+        [isLoading]="isShareLoading"
+        [error]="isShareError"
+        [shareUrl]="shareUrl"
+        (onClose)="isShareModalOpen = false"
+      ></app-qr-modal>
 
     </div>
   `,
@@ -513,9 +526,17 @@ import { AudioService } from '../../services/audio.service';
     .action-buttons-stack {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      width: 100%;
-      max-width: 320px;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .primary-btn-row {
+      display: flex;
+      gap: 12px;
+    }
+    .primary-btn-row .btn {
+      flex: 1;
+      padding: 14px 0;
+      font-size: 1.1rem;
     }
 
     .btn {
@@ -535,15 +556,19 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .btn-download-strip {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #ffffff;
-      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+      background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+      color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(255,105,180,0.4);
     }
-
-    .btn-download-strip:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
+    .btn-share-strip {
+      background: linear-gradient(135deg, #9370db 0%, #8a2be2 100%);
+      color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(147,112,219,0.4);
     }
+    .btn-download-strip:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,105,180,0.6); }
+    .btn-share-strip:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(147,112,219,0.6); }
 
     .secondary-btn-row {
       display: flex;
@@ -571,6 +596,12 @@ export class FilmStripPreviewComponent {
   readonly audioService = inject(AudioService);
 
   copySuccess = false;
+
+  // Share Modal State
+  isShareModalOpen = false;
+  isShareLoading = false;
+  isShareError = false;
+  shareUrl: string | null = null;
 
   readonly themeKeys: FilmStripThemeKey[] = [
     'seoul-minimal',
@@ -601,6 +632,24 @@ export class FilmStripPreviewComponent {
   onClearPhotos(): void {
     if (!confirm('Clear all 4 shots and start over?')) return;
     this.webrtcService.clearPhotos();
+  }
+
+  async onShareStrip(): Promise<void> {
+    const dataUrl = this.webrtcService.filmStripDataUrl();
+    if (!dataUrl) return;
+
+    this.isShareModalOpen = true;
+    this.isShareLoading = true;
+    this.isShareError = false;
+
+    try {
+      this.shareUrl = await this.webrtcService.uploadFilmStrip(dataUrl);
+    } catch (e) {
+      console.error(e);
+      this.isShareError = true;
+    } finally {
+      this.isShareLoading = false;
+    }
   }
 
   onDownloadStrip(): void {
