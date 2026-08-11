@@ -295,6 +295,8 @@ export class WebRtcService {
       });
       this.stream.set(null);
     }
+    this.progressText.set('Camera stopped. Click Allow Camera to restart.');
+    this.progressValue.set(0);
   }
 
   setFilterIndex(index: number): void {

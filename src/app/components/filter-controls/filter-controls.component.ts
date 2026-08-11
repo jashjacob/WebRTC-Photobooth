@@ -25,6 +25,7 @@ import { AudioService } from '../../services/audio.service';
               [disabled]="webrtcService.isCapturing()"
               (click)="webrtcService.setFilterIndex(i)"
               [title]="'Select ' + f.label + ' filter'"
+              [attr.aria-label]="f.label + ' filter'"
               [attr.aria-pressed]="webrtcService.filterIndex() === i"
             >
               <span class="chip-icon">{{ f.emoji }}</span>
@@ -74,6 +75,7 @@ import { AudioService } from '../../services/audio.service';
                 class="mini-btn start-cam-btn" 
                 (click)="onStart()"
                 title="Start Camera Stream"
+                aria-label="Start Camera"
               >
                 📹 Start Camera
               </button>
@@ -82,6 +84,7 @@ import { AudioService } from '../../services/audio.service';
                 class="mini-btn stop-cam-btn" 
                 (click)="webrtcService.stopCamera()"
                 title="Stop Camera (also aborts capture)"
+                aria-label="Stop Camera"
               >
                 🛑 Stop
               </button>
@@ -93,6 +96,7 @@ import { AudioService } from '../../services/audio.service';
               [class.muted]="audioService.isMuted()"
               (click)="onToggleAudio()"
               [title]="audioService.isMuted() ? 'Unmute countdown audio' : 'Mute countdown audio'"
+              aria-label="Toggle audio"
               [attr.aria-pressed]="audioService.isMuted()"
             >
               {{ audioService.isMuted() ? '🔇 Muted' : '🔊 Sound On' }}
@@ -247,7 +251,12 @@ import { AudioService } from '../../services/audio.service';
       color: #ffffff;
       border-color: transparent;
       box-shadow: 0 4px 12px rgba(255, 158, 187, 0.4);
-      transform: translateY(-2px);
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .filter-chip:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 2px;
     }
 
     .filter-chip:disabled {
@@ -393,6 +402,11 @@ import { AudioService } from '../../services/audio.service';
       cursor: not-allowed;
     }
 
+    .mini-btn:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 2px;
+    }
+
     /* Shutter Actions Row */
     .shutter-actions-row {
       display: flex;
@@ -431,6 +445,11 @@ import { AudioService } from '../../services/audio.service';
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
+    }
+
+    .arcade-shutter-btn:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 3px;
     }
 
     .arcade-shutter-btn.capturing {
@@ -521,6 +540,11 @@ import { AudioService } from '../../services/audio.service';
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .single-snap-pill-btn:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 2px;
     }
   `]
 })
