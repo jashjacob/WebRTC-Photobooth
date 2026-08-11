@@ -284,10 +284,10 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   onClose = output<void>();
 
   async ngAfterViewInit() {
-    this.imgVisor.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"><path d="M10,10 L190,10 L170,50 L30,50 Z" fill="rgba(0, 243, 255, 0.4)" stroke="%2300F3FF" stroke-width="4"/><rect x="30" y="20" width="140" height="10" fill="%2300F3FF"/></svg>';
-    this.imgCatEarLeft.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
-    this.imgCatEarRight.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
-    this.imgCatNose.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M20,25 Q50,50 80,25 Q50,0 20,25" fill="pink"/><path d="M10,25 L-20,15 M10,25 L-20,25 M10,25 L-20,35 M90,25 L120,15 M90,25 L120,25 M90,25 L120,35" stroke="white" stroke-width="6"/></svg>';
+    this.imgVisor.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgNjAiPjxwYXRoIGQ9Ik0xMCwxMCBMMTkwLDEwIEwxNzAsNTAgTDMwLDUwIFoiIGZpbGw9InJnYmEoMCwgMjQzLCAyNTUsIDAuNCkiIHN0cm9rZT0iIzAwRjNGRiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHJlY3QgeD0iMzAiIHk9IjIwIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMDBGM0ZGIi8+PC9zdmc+';
+    this.imgCatEarLeft.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cG9seWdvbiBwb2ludHM9IjUwLDEwIDkwLDkwIDEwLDkwIiBmaWxsPSJwaW5rIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjUiLz48L3N2Zz4=';
+    this.imgCatEarRight.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cG9seWdvbiBwb2ludHM9IjUwLDEwIDkwLDkwIDEwLDkwIiBmaWxsPSJwaW5rIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjUiLz48L3N2Zz4=';
+    this.imgCatNose.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNTAiPjxwYXRoIGQ9Ik0yMCwyNSBRNTAsNTAgODAsMjUgUTUwLDAgMjAsMjUiIGZpbGw9InBpbmsiLz48cGF0aCBkPSJNMTAsMjUgTC0yMCwxNSBNMTAsMjUgTC0yMCwyNSBNMTAsMjUgTC0yMCwzNSBNOTAsMjUgTDEyMCwxNSBNOTAsMjUgTDEyMCwyNSBNOTAsMjUgTDEyMCwzNSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI2Ii8+PC9zdmc+';
     // Camera is already started by global Landing Modal. Just attach the stream.
     if (this.isDestroyed) return;
     
@@ -350,8 +350,9 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
       this.lastVideoTime = video.currentTime;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      const results = this.faceTracking.detectVideoFrame(video, performance.now());
-      if (results && results.faceLandmarks.length > 0) {
+      try {
+        const results = this.faceTracking.detectVideoFrame(video, performance.now());
+        if (results && results.faceLandmarks.length > 0) {
         const landmarks = results.faceLandmarks[0];
         
         const maskId = this.activeMask().id;
@@ -442,6 +443,9 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
           
           ctx.restore();
         }
+      }
+      } catch (err) {
+        console.error('Face tracking error:', err);
       }
     }
     this.animationFrameId = requestAnimationFrame(this.renderLoop);
