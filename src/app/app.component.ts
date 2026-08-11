@@ -17,7 +17,7 @@ import { WebRtcService } from './services/webrtc.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="app-container" [class.pro-theme]="mode() === 'pro'">
-      @if (!webrtcService.stream()) {
+      @if (!webrtcService.appInitialized()) {
         <div class="camera-landing-modal">
           <div class="modal-glass-card">
             <div class="modal-icon">📸</div>
