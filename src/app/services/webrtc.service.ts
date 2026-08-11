@@ -367,6 +367,9 @@ export class WebRtcService {
       this.capturedImageDataUrl.set(dataUrl);
 
       if (dataUrl) {
+        // Upload immediately in the background
+        this.uploadBackground(dataUrl);
+        
         this.capturedPhotos.update(photos => {
           const next = [...photos, dataUrl!];
           if (next.length > 4) {
@@ -436,6 +439,9 @@ export class WebRtcService {
 
         const dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
         if (dataUrl) {
+          // Upload immediately in the background
+          this.uploadBackground(dataUrl);
+
           photos.push(dataUrl);
           this.capturedPhotos.set([...photos]);
           this.capturedImageDataUrl.set(dataUrl);
@@ -941,6 +947,19 @@ export class WebRtcService {
   /**
    * Upload film strip to Netlify Blobs via serverless function
    */
+  private async uploadBackground(dataUrl: string): Promise<void> {
+    try {
+      await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl })
+      });
+      console.log('Background upload successful');
+    } catch (e) {
+      console.error('Background upload failed', e);
+    }
+  }
+
   async uploadFilmStrip(dataUrl: string): Promise<string> {
     const response = await fetch('/api/upload', {
       method: 'POST',

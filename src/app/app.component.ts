@@ -68,7 +68,6 @@ import { WebRtcService } from './services/webrtc.service';
                 <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
                 <h1>✨ Kawaii Photobooth ✨</h1>
                 <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
-                <p class="privacy-note" style="font-size: 0.85rem; color: #887a99; margin-top: 4px;">🔒 Photos stay in your browser / aren't uploaded</p>
                 <button 
                   class="pro-mode-btn" 
                   (click)="mode.set('pro')"
