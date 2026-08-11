@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FaceTrackingService } from './face-tracking.service';
 import { FilterControlsComponent } from '../components/filter-controls/filter-controls.component';
@@ -75,6 +75,7 @@ const AR_MASKS: ARMask[] = [
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .pro-container {
       width: 100%;
