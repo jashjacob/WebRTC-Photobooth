@@ -561,9 +561,7 @@ export class WebRtcService {
       ctx.save();
       // Explicitly keep the CSS filter applied (so sunglasses inherit snapshot color grade)
       ctx.filter = filterStyle && filterStyle !== 'none' ? filterStyle : 'none';
-      // Mirror the AR canvas context horizontally to match the mirrored camera snapshot
-      ctx.scale(-1, 1);
-      ctx.translate(-canvas.width, 0);
+      // Do NOT mirror again, since the context is already mirrored by the parent save state
       // Use the exact same calculated cropping offsets to perfectly align the AR masks
       ctx.drawImage(overlayCanvas, offsetX, offsetY, drawWidth, drawHeight);
       ctx.restore();
@@ -645,6 +643,7 @@ export class WebRtcService {
       grad.addColorStop(0.75, '#E0F2FE');
       grad.addColorStop(1, '#F3E8FF');
       ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
     } else if (theme.key === 'y2k-holographic' && !bgImage) {
       const grad = ctx.createLinearGradient(0, 0, width, height);
       grad.addColorStop(0, '#ffb6ff');
