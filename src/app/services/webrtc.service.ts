@@ -270,12 +270,16 @@ export class WebRtcService {
     } catch (err: any) {
       console.error('Error starting camera stream:', err);
       let errorMsg = err.message || 'Could not access webcam.';
-      if (err.name === 'NotAllowedError') {
-        errorMsg = 'Camera access was denied. Please allow camera permissions in your browser.';
-      } else if (err.name === 'NotFoundError') {
-        errorMsg = 'No camera found. Please connect a webcam.';
-      } else if (err.name === 'NotReadableError') {
-        errorMsg = 'Camera is already in use by another application or tab.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg = 'Camera permission denied. Please allow access in browser settings and retry.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMsg = 'No camera found. Please connect or enable your webcam.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMsg = 'Camera is in use by another app or browser tab. Please close other camera apps and retry.';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMsg = 'Requested camera resolution is not supported by your hardware.';
+      } else if (err.name === 'SecurityError') {
+        errorMsg = 'Camera access blocked due to security restrictions (HTTPS required).';
       }
       this.errorMessage.set(errorMsg);
       this.progressText.set('Camera access required to start.');
@@ -574,16 +578,19 @@ export class WebRtcService {
     
     ctx.restore(); // Restore context (removes CSS filters for future operations)
 
-    // Async blob encoding off main thread with WebP
+    // Yield 1 rAF to avoid WebGL pipeline lock / ReadPixels stalls on mobile GPUs
+    await new Promise(r => requestAnimationFrame(r));
+
+    // Fast async blob encoding off main thread (JPEG format avoids WebP software encoding stalls on WebKit/Android)
     return new Promise(resolve => {
       canvas.toBlob(blob => {
         if (!blob) {
-          return resolve(canvas.toDataURL('image/webp', 0.90));
+          return resolve(canvas.toDataURL('image/jpeg', 0.88));
         }
         const objectUrl = URL.createObjectURL(blob);
         this.createdObjectUrls.push(objectUrl);
         resolve(objectUrl);
-      }, 'image/webp', 0.90);
+      }, 'image/jpeg', 0.88);
     });
   }
 

@@ -25,7 +25,7 @@ import { WebRtcService } from './services/webrtc.service';
               <h1 class="modal-title">Welcome to Kawaii Photobooth</h1>
               <p class="modal-subtitle">Snap, filter, and create a vintage film strip — right in your browser.</p>
               <button class="primary-btn pulse" (click)="webrtcService.startCamera()">Allow Camera Access</button>
-              <p class="modal-hint">We only use your camera locally. No uploads, ever.</p>
+              <p class="modal-hint">Photos stay in your browser / aren't uploaded.</p>
             } @else {
               <div class="modal-icon">😔</div>
               <h1 class="modal-title">Camera Not Available</h1>
@@ -43,71 +43,73 @@ import { WebRtcService } from './services/webrtc.service';
           </div>
         </div>
       } @else {
-        @if (mode() === 'standard') {
-        <!-- Full Page Studio White Flash Overlay -->
-        <div 
-          class="full-page-flash-overlay" 
-          [class.active]="webrtcService.isFlashActive()"
-        ></div>
+        @defer (when webrtcService.appInitialized()) {
+          @if (mode() === 'standard') {
+            <!-- Full Page Studio White Flash Overlay -->
+            <div 
+              class="full-page-flash-overlay" 
+              [class.active]="webrtcService.isFlashActive()"
+            ></div>
 
-        <!-- Session Progress Bar Header -->
-        <div class="progress-bar-wrapper">
-          <div 
-            class="progress-bar" 
-            [style.transform]="webrtcService.progressTransform()"
-          ></div>
-          <div class="progress-label-overlay">
-            {{ webrtcService.progressText() }}
-          </div>
-        </div>
-
-        <main class="main-content">
-          <!-- Brand Header -->
-          <header class="app-header">
-            <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
-            <h1>✨ Kawaii Photobooth ✨</h1>
-            <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
-            <button 
-              class="pro-mode-btn" 
-              (click)="mode.set('pro')"
-              [disabled]="webrtcService.isCapturing() || !webrtcService.isStreaming()"
-              [title]="!webrtcService.isStreaming() ? 'Start camera first to use PRO masks' : ''"
-            >Try PRO AR Masks 😎</button>
-          </header>
-
-          @if (webrtcService.errorMessage()) {
-            <div class="error-banner">
-              ⚠️ {{ webrtcService.errorMessage() }}
+            <!-- Session Progress Bar Header -->
+            <div class="progress-bar-wrapper">
+              <div 
+                class="progress-bar" 
+                [style.transform]="webrtcService.progressTransform()"
+              ></div>
+              <div class="progress-label-overlay">
+                {{ webrtcService.progressText() }}
+              </div>
             </div>
+
+            <main class="main-content">
+              <!-- Brand Header -->
+              <header class="app-header">
+                <div class="header-badge">🎀 VINTAGE 35MM STUDIO</div>
+                <h1>✨ Kawaii Photobooth ✨</h1>
+                <p class="tagline">4-Shot Automated Burst & Vertical Film Strip Collage Generator</p>
+                <button 
+                  class="pro-mode-btn" 
+                  (click)="mode.set('pro')"
+                  [disabled]="webrtcService.isCapturing() || !webrtcService.isStreaming()"
+                  [title]="!webrtcService.isStreaming() ? 'Start camera first to use PRO masks' : ''"
+                >Try PRO AR Masks 😎</button>
+              </header>
+
+              @if (webrtcService.errorMessage()) {
+                <div class="error-banner">
+                  ⚠️ {{ webrtcService.errorMessage() }}
+                </div>
+              }
+
+              <!-- 2-Column Photobooth Studio Layout -->
+              <div class="photobooth-grid">
+                <!-- Left Column: Camera Stage & Live Filter Deck -->
+                <section class="stage-section">
+                  <app-camera-preview #cameraPreview></app-camera-preview>
+                  
+                  <app-filter-controls 
+                    (snapClicked)="cameraPreview.takeSnapshot()"
+                    (burstClicked)="cameraPreview.startBurst()"
+                  ></app-filter-controls>
+                </section>
+
+                <!-- Right Column: Vertical Film Strip Studio & Customizer -->
+                <section class="strip-section">
+                  <app-film-strip-preview></app-film-strip-preview>
+                </section>
+              </div>
+            </main>
+          } @else {
+            @defer {
+              <app-pro-booth #proBooth (onClose)="mode.set('standard')"></app-pro-booth>
+            } @loading {
+              <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
+            } @error { 
+              <div style="padding:40px; text-align:center; color:#ff6b6b;">⚠️ PRO mode failed to load. <a href="/">Return to standard mode</a></div> 
+            }
           }
-
-          <!-- 2-Column Photobooth Studio Layout -->
-          <div class="photobooth-grid">
-            <!-- Left Column: Camera Stage & Live Filter Deck -->
-            <section class="stage-section">
-              <app-camera-preview #cameraPreview></app-camera-preview>
-              
-              <app-filter-controls 
-                (snapClicked)="cameraPreview.takeSnapshot()"
-                (burstClicked)="cameraPreview.startBurst()"
-              ></app-filter-controls>
-            </section>
-
-            <!-- Right Column: Vertical Film Strip Studio & Customizer -->
-            <section class="strip-section">
-              <app-film-strip-preview></app-film-strip-preview>
-            </section>
-          </div>
-        </main>
-      } @else {
-        @defer {
-          <app-pro-booth #proBooth (onClose)="mode.set('standard')"></app-pro-booth>
-        } @loading {
-          <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
-        } @error { 
-          <div style="padding:40px; text-align:center; color:#ff6b6b;">⚠️ PRO mode failed to load. <a href="/">Return to standard mode</a></div> 
         }
-      }
       }
     </div>
   `,
