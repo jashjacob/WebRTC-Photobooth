@@ -72,7 +72,11 @@ import { WebRtcService } from '../../services/webrtc.service';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: scaleX(-1); /* Mirror camera */
+      display: block;
+      /* GPU promotion and horizontal mirror for natural selfie camera view */
+      transform: translateZ(0) scaleX(-1);
+      backface-visibility: hidden;
+      will-change: transform, filter;
     }
 
     /* Countdown & Badges */

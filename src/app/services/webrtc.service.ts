@@ -237,10 +237,10 @@ export class WebRtcService {
 
       const constraints: MediaStreamConstraints = {
         video: {
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
           facingMode: 'user',
-          frameRate: { ideal: 30, max: 60 }
+          frameRate: { ideal: 30, max: 30 }
         },
         audio: false
       };
