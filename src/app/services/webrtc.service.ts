@@ -330,108 +330,134 @@ export class WebRtcService {
   /**
    * Triggers single photo snapshot with countdown timer and audio-visual shutter
    */
-  async triggerSingleSnap(video: HTMLVideoElement): Promise<string | null> {
+  async triggerSingleSnap(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<string | null> {
     if (!video || this.isCapturing()) return null;
 
     this.isCapturing.set(true);
     const delaySec = this.countdownSeconds();
-
-    for (let sec = delaySec; sec >= 1; sec--) {
-      this.countdownValue.set(sec);
-      this.audioService.playBeep(880, 0.12, sec === 1);
-      this.progressText.set(`Get ready! Snap in ${sec}...`);
-      await this.sleep(1000);
-    }
-
-    this.countdownValue.set(0);
-    this.triggerFlashAndShutter();
     
-    // Yield to let browser render flash frame smoothly
-    await new Promise(r => requestAnimationFrame(r));
+    let dataUrl: string | null = null;
 
-    const dataUrl = await this.takeFrameSnapshotAsync(video);
-    this.capturedImageDataUrl.set(dataUrl);
+    try {
+      for (let sec = delaySec; sec >= 1; sec--) {
+        if (!this.isCapturing()) return null; // Cancellation check
+        this.countdownValue.set(sec);
+        this.audioService.playBeep(880, 0.12, sec === 1);
+        this.progressText.set(`Get ready! Snap in ${sec}...`);
+        await this.sleep(1000);
+      }
 
-    if (dataUrl) {
-      this.capturedPhotos.update(photos => {
-        const next = [...photos, dataUrl];
-        return next.slice(-4);
-      });
+      if (!this.isCapturing()) return null; // Cancellation check
+      this.countdownValue.set(0);
+      this.triggerFlashAndShutter();
+      
+      // Yield to let browser render flash frame smoothly
+      await new Promise(r => requestAnimationFrame(r));
+
+      dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
+      this.capturedImageDataUrl.set(dataUrl);
+
+      if (dataUrl) {
+        this.capturedPhotos.update(photos => {
+          const next = [...photos, dataUrl!];
+          if (next.length > 4) {
+            const droppedUrl = next[0];
+            try { URL.revokeObjectURL(droppedUrl); } catch (e) {}
+          }
+          return next.slice(-4);
+        });
+      }
+
+      await this.sleep(300);
+
+      if (this.capturedPhotos().length > 0) {
+        await this.renderFilmStripCollage();
+      }
+
+      this.progressText.set('Single photo captured!');
+      this.progressValue.set(100);
+      
+    } finally {
+      this.countdownValue.set(null);
+      this.isCapturing.set(false);
     }
-
-    await this.sleep(300);
-    this.countdownValue.set(null);
-    this.isCapturing.set(false);
-
-    if (this.capturedPhotos().length > 0) {
-      await this.renderFilmStripCollage();
-    }
-
-    this.progressText.set('Single photo captured!');
-    this.progressValue.set(100);
+    
     return dataUrl;
   }
 
   /**
    * Executes a 4-photo burst capture sequence with 3s/5s countdowns and flash effects
    */
-  async startBurstCapture(video: HTMLVideoElement): Promise<void> {
+  async startBurstCapture(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<void> {
     if (!video || this.isCapturing() || !this.isStreaming()) return;
 
-    this.clearPhotos(); // Clean previous session memory (which resets isCapturing to false)
+    if (this.capturedPhotos().length > 0) {
+       this.clearPhotos(); // Only clear if not capturing, but isCapturing is already false above
+    }
+    
     this.isCapturing.set(true); // Now lock the state for the new burst sequence
 
-    const photos: string[] = [];
-    const totalShots = 4;
-    const delaySec = this.countdownSeconds();
+    try {
+      const photos: string[] = [];
+      const totalShots = 4;
+      const delaySec = this.countdownSeconds();
 
-    for (let i = 1; i <= totalShots; i++) {
-      if (!this.isCapturing() || !this.isStreaming()) break;
-      this.burstIndex.set(i);
-      this.progressValue.set(Math.round(((i - 1) / totalShots) * 100));
+      for (let i = 1; i <= totalShots; i++) {
+        if (!this.isCapturing() || !this.isStreaming()) break;
+        this.burstIndex.set(i);
+        this.progressValue.set(Math.round(((i - 1) / totalShots) * 100));
 
-      // Countdown loop for current shot
-      for (let sec = delaySec; sec >= 1; sec--) {
-        this.countdownValue.set(sec);
-        this.progressText.set(`Shot ${i} of ${totalShots}: Pose! Snap in ${sec}s...`);
-        this.audioService.playBeep(880 + (delaySec - sec) * 100, 0.12, sec === 1);
-        await this.sleep(1000);
+        // Countdown loop for current shot
+        for (let sec = delaySec; sec >= 1; sec--) {
+          if (!this.isCapturing()) return;
+          this.countdownValue.set(sec);
+          this.progressText.set(`Shot ${i} of ${totalShots}: Pose! Snap in ${sec}s...`);
+          this.audioService.playBeep(880 + (delaySec - sec) * 100, 0.12, sec === 1);
+          await this.sleep(1000);
+        }
+
+        if (!this.isCapturing()) return;
+        
+        // Flash & Capture
+        this.countdownValue.set(0);
+        this.triggerFlashAndShutter();
+
+        // Yield for instant flash render
+        await new Promise(r => requestAnimationFrame(r));
+
+        const dataUrl = await this.takeFrameSnapshotAsync(video, overlayCanvas);
+        if (dataUrl) {
+          photos.push(dataUrl);
+          this.capturedPhotos.set([...photos]);
+          this.capturedImageDataUrl.set(dataUrl);
+        }
+
+        await this.sleep(300);
+        this.countdownValue.set(null);
+
+        // Pause between shots if not the last one
+        if (i < totalShots) {
+          this.progressText.set(`Pose for shot ${i + 1}!`);
+          await this.sleep(700);
+        }
       }
 
-      // Flash & Capture
-      this.countdownValue.set(0);
-      this.triggerFlashAndShutter();
+      if (!this.isCapturing()) return;
 
-      // Yield for instant flash render
-      await new Promise(r => requestAnimationFrame(r));
+      this.progressValue.set(90);
+      this.progressText.set('Stitching 4-Shot Film Strip Collage...');
 
-      const dataUrl = await this.takeFrameSnapshotAsync(video);
-      if (dataUrl) {
-        photos.push(dataUrl);
-        this.capturedPhotos.set([...photos]);
-        this.capturedImageDataUrl.set(dataUrl);
-      }
+      // Generate collage
+      await this.renderFilmStripCollage();
 
-      await this.sleep(300);
+      this.progressValue.set(100);
+      this.progressText.set('Burst session complete! Download your film strip below.');
+      this.launchConfetti();
+      
+    } finally {
       this.countdownValue.set(null);
-
-      // Pause between shots if not the last one
-      if (i < totalShots) {
-        this.progressText.set(`Pose for shot ${i + 1}!`);
-        await this.sleep(700);
-      }
+      this.isCapturing.set(false);
     }
-
-    this.progressValue.set(90);
-    this.progressText.set('Stitching 4-Shot Film Strip Collage...');
-
-    // Generate collage
-    await this.renderFilmStripCollage();
-
-    this.isCapturing.set(false);
-    this.progressValue.set(100);
-    this.progressText.set('Burst session complete! Download your film strip below.');
-    this.launchConfetti();
   }
 
   launchConfetti(): void {
@@ -448,7 +474,8 @@ export class WebRtcService {
   }
 
   clearPhotos(): void {
-    this.isCapturing.set(false);
+    if (this.isCapturing()) return;
+    
     // Revoke any created Object URLs to prevent memory leaks
     if (this.createdObjectUrls.length > 0) {
       this.createdObjectUrls.forEach(url => {
@@ -478,7 +505,7 @@ export class WebRtcService {
   /**
    * Hardware-accelerated async frame snapshot capture using WebP encoding
    */
-  async takeFrameSnapshotAsync(video: HTMLVideoElement): Promise<string | null> {
+  async takeFrameSnapshotAsync(video: HTMLVideoElement, overlayCanvas?: HTMLCanvasElement): Promise<string | null> {
     if (!video) return null;
 
     if (!this.cachedSnapCanvas) {
@@ -528,7 +555,21 @@ export class WebRtcService {
     } else {
       ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
     }
-    ctx.restore();
+    
+    // Composite AR overlay if provided
+    if (overlayCanvas) {
+      ctx.save();
+      // Explicitly keep the CSS filter applied (so sunglasses inherit snapshot color grade)
+      ctx.filter = filterStyle && filterStyle !== 'none' ? filterStyle : 'none';
+      // Mirror the AR canvas context horizontally to match the mirrored camera snapshot
+      ctx.scale(-1, 1);
+      ctx.translate(-canvas.width, 0);
+      // Use the exact same calculated cropping offsets to perfectly align the AR masks
+      ctx.drawImage(overlayCanvas, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.restore();
+    }
+    
+    ctx.restore(); // Restore context (removes CSS filters for future operations)
 
     // Async blob encoding off main thread with WebP
     return new Promise(resolve => {
@@ -580,8 +621,23 @@ export class WebRtcService {
 
     ctx.scale(dpr, dpr);
 
+    // Preload HQ Image Overlays
+    let bgImage: HTMLImageElement | null = null;
+    let overlayImage: HTMLImageElement | null = null;
+    try {
+      if (theme.key === 'y2k-holographic') {
+        bgImage = await this.loadImage('assets/overlays/holographic.jpg');
+      } else if (theme.key === 'analog-film') {
+        overlayImage = await this.loadImage('assets/overlays/film-dust.jpg');
+      }
+    } catch (e) {
+      console.warn('Failed to load HQ overlay assets, falling back to CSS primitives');
+    }
+
     // 1. Draw Background
-    if (theme.key === 'rainbow-sherbet') {
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, width, height);
+    } else if (theme.key === 'rainbow-sherbet') {
       const grad = ctx.createLinearGradient(0, 0, width, height);
       grad.addColorStop(0, '#FFE4E6');
       grad.addColorStop(0.25, '#FEF3C7');
@@ -589,19 +645,20 @@ export class WebRtcService {
       grad.addColorStop(0.75, '#E0F2FE');
       grad.addColorStop(1, '#F3E8FF');
       ctx.fillStyle = grad;
-    } else if (theme.key === 'y2k-holographic') {
+    } else if (theme.key === 'y2k-holographic' && !bgImage) {
       const grad = ctx.createLinearGradient(0, 0, width, height);
       grad.addColorStop(0, '#ffb6ff');
       grad.addColorStop(0.5, '#b6ffff');
       grad.addColorStop(1, '#e0b6ff');
       ctx.fillStyle = grad;
-    } else {
+      ctx.fillRect(0, 0, width, height);
+    } else if (!bgImage) {
       ctx.fillStyle = theme.bgColor;
+      ctx.fillRect(0, 0, width, height);
     }
-    ctx.fillRect(0, 0, width, height);
     
-    // Add analog film grain/noise
-    if (theme.key === 'analog-film') {
+    // Add analog film grain/noise (fallback if overlay fails)
+    if (theme.key === 'analog-film' && !overlayImage) {
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
       for (let i=0; i<3000; i++) {
         ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
@@ -787,6 +844,13 @@ export class WebRtcService {
     ctx.font = '10px monospace';
     ctx.fillText('||| | ||||| ||| |||| || ||||| |||', width / 2, footerStartY + 82);
     ctx.fillText(`#PB-${Date.now().toString().slice(-6)}`, width / 2, footerStartY + 96);
+    
+    // 7. Draw Screen-blended Overlay Textures (Dust, Light Leaks)
+    if (overlayImage && theme.key === 'analog-film') {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(overlayImage, 0, 0, width, height);
+      ctx.globalCompositeOperation = 'source-over'; // reset
+    }
 
     loadedImages.forEach(img => {
       if (img && 'close' in img && typeof (img as any).close === 'function') {
@@ -795,18 +859,23 @@ export class WebRtcService {
     });
 
     // Non-blocking async Blob output
+    // Encode to WebP Blob for memory efficiency
     return new Promise(resolve => {
       canvas.toBlob(blob => {
-        if (!blob) {
-          const fallback = canvas.toDataURL('image/png');
+        if (blob) {
+          if (this.filmStripDataUrl()) {
+            try { URL.revokeObjectURL(this.filmStripDataUrl()!); } catch (e) {}
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          this.createdObjectUrls.push(objectUrl);
+          this.filmStripDataUrl.set(objectUrl);
+          resolve(objectUrl);
+        } else {
+          const fallback = canvas.toDataURL('image/webp', 0.90);
           this.filmStripDataUrl.set(fallback);
-          return resolve(fallback);
+          resolve(fallback);
         }
-        const dataUrl = URL.createObjectURL(blob);
-        this.createdObjectUrls.push(dataUrl);
-        this.filmStripDataUrl.set(dataUrl);
-        resolve(dataUrl);
-      }, 'image/png');
+      }, 'image/webp', 0.90);
     });
   }
 
