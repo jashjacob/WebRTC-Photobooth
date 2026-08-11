@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject, ChangeDetectionStrategy, HostListener, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { CameraPreviewComponent } from './components/camera-preview/camera-preview.component';
 import { FilterControlsComponent } from './components/filter-controls/filter-controls.component';
 import { FilmStripPreviewComponent } from './components/film-strip-preview/film-strip-preview.component';
@@ -9,12 +9,11 @@ import { WebRtcService } from './services/webrtc.service';
 @Component({
     selector: 'app-root',
     imports: [
-        CommonModule,
-        CameraPreviewComponent,
-        FilterControlsComponent,
-        FilmStripPreviewComponent,
-        ProBoothComponent
-    ],
+    CameraPreviewComponent,
+    FilterControlsComponent,
+    FilmStripPreviewComponent,
+    ProBoothComponent
+],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="app-container" [class.pro-theme]="mode() === 'pro'">

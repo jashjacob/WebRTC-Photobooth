@@ -1,12 +1,12 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service';
 import { AudioService } from '../../services/audio.service';
 
 @Component({
     selector: 'app-film-strip-preview',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="film-strip-card">

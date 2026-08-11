@@ -1,11 +1,11 @@
 import { Component, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { WebRtcService } from '../../services/webrtc.service';
 import { AudioService } from '../../services/audio.service';
 
 @Component({
     selector: 'app-filter-controls',
-    imports: [CommonModule],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="controls-container">
