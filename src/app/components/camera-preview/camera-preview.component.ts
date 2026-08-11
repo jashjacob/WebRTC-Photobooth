@@ -52,13 +52,17 @@ import { WebRtcService } from '../../services/webrtc.service';
       display: flex;
       justify-content: center;
       width: 100%;
-      max-width: 640px;
+      max-width: 100%;
       margin: 0 auto;
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
 
     .video-container {
       position: relative;
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       aspect-ratio: 4 / 3;
       background: #111827;
       border-radius: 20px;

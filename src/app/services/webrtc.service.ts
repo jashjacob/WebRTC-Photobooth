@@ -278,6 +278,7 @@ export class WebRtcService {
         errorMsg = 'Camera is already in use by another application or tab.';
       }
       this.errorMessage.set(errorMsg);
+      this.progressText.set('Camera access required to start.');
     }
   }
 

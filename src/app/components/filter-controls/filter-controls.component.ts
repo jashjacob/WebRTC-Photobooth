@@ -147,7 +147,8 @@ import { AudioService } from '../../services/audio.service';
       flex-direction: column;
       gap: 16px;
       width: 100%;
-      max-width: 640px;
+      max-width: 100%;
+      box-sizing: border-box;
       margin-left: auto;
       margin-right: auto;
       font-family: 'Nunito', sans-serif;
@@ -233,7 +234,6 @@ import { AudioService } from '../../services/audio.service';
       flex-shrink: 0;
       font-family: 'Nunito', sans-serif;
       scroll-snap-align: start;
-      max-width: 140px; /* prevent any runaway widths */
     }
 
     .filter-chip:hover:not(:disabled) {
