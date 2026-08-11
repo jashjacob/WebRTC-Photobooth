@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { WebRtcService } from '../../services/webrtc.service';
 
 @Component({
-  selector: 'app-camera-preview',
-  standalone: true,
-  imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-camera-preview',
+    imports: [CommonModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="camera-preview-card">
       <div class="video-container">
         <video 
@@ -48,7 +47,7 @@ import { WebRtcService } from '../../services/webrtc.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .camera-preview-card {
       display: flex;
       justify-content: center;

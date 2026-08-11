@@ -7,17 +7,16 @@ import { ProBoothComponent } from './pro/pro-booth.component';
 import { WebRtcService } from './services/webrtc.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    CameraPreviewComponent, 
-    FilterControlsComponent, 
-    FilmStripPreviewComponent,
-    ProBoothComponent
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-root',
+    imports: [
+        CommonModule,
+        CameraPreviewComponent,
+        FilterControlsComponent,
+        FilmStripPreviewComponent,
+        ProBoothComponent
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="app-container" [class.pro-theme]="mode() === 'pro'">
       @if (mode() === 'standard') {
         <!-- Full Page Studio White Flash Overlay -->
@@ -83,7 +82,7 @@ import { WebRtcService } from './services/webrtc.service';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .app-container {
       min-height: 100vh;
       display: flex;

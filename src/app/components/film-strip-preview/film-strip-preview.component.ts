@@ -5,11 +5,10 @@ import { WebRtcService, FilmStripThemeKey } from '../../services/webrtc.service'
 import { AudioService } from '../../services/audio.service';
 
 @Component({
-  selector: 'app-film-strip-preview',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-film-strip-preview',
+    imports: [CommonModule, FormsModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="film-strip-card">
       
       <!-- Studio Header -->
@@ -141,7 +140,7 @@ import { AudioService } from '../../services/audio.service';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .film-strip-card {
       background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(12px);

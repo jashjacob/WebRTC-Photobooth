@@ -19,10 +19,9 @@ const AR_MASKS: ARMask[] = [
 ];
 
 @Component({
-  selector: 'app-pro-booth',
-  standalone: true,
-  imports: [CommonModule, FilterControlsComponent, FilmStripPreviewComponent],
-  template: `
+    selector: 'app-pro-booth',
+    imports: [CommonModule, FilterControlsComponent, FilmStripPreviewComponent],
+    template: `
     <div class="pro-container">
       <header class="app-header">
         <div class="header-badge">😎 AI POWERED</div>
@@ -76,7 +75,7 @@ const AR_MASKS: ARMask[] = [
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .pro-container {
       width: 100%;
       max-width: 1200px;
