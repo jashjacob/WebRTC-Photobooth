@@ -52,7 +52,7 @@ import { WebRtcService } from '../../services/webrtc.service';
       display: flex;
       justify-content: center;
       width: 100%;
-      max-width: 100%;
+      max-width: 640px;
       margin: 0 auto;
       box-sizing: border-box;
       overflow-x: hidden;
