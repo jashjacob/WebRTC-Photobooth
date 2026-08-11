@@ -430,6 +430,7 @@ import { WebRtcService } from './services/webrtc.service';
       display: flex;
       flex-direction: column;
       gap: 16px;
+      min-width: 0;
     }
   `]
 })
