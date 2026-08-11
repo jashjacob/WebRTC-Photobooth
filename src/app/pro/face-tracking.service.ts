@@ -13,6 +13,16 @@ export class FaceTrackingService {
   async initialize(): Promise<void> {
     if (this.faceLandmarker) return;
 
+    // Filter out harmless TFLite WASM INFO messages logged to console.error
+    const originalConsoleError = console.error;
+    console.error = (...args: any[]) => {
+      if (typeof args[0] === 'string' && args[0].includes('INFO: Created TensorFlow Lite')) {
+        console.info(...args);
+        return;
+      }
+      originalConsoleError.apply(console, args);
+    };
+
     this.isLoading.set(true);
     try {
       // Load WebAssembly binaries from jsdelivr CDN (keeps our bundle small)
@@ -35,7 +45,9 @@ export class FaceTrackingService {
     } catch (e) {
       this.hasFailed.set(true);
       this.isLoading.set(false);
-      console.error('Failed to initialize Face Landmarker', e);
+      originalConsoleError.call(console, 'Failed to initialize Face Landmarker', e);
+    } finally {
+      console.error = originalConsoleError;
     }
   }
 
