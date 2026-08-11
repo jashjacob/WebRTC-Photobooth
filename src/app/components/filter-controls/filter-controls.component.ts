@@ -167,6 +167,7 @@ import { AudioService } from '../../services/audio.service';
       border: 1px solid rgba(255, 158, 187, 0.4);
       box-shadow: 0 6px 20px rgba(255, 158, 187, 0.12);
       position: relative; /* for fade-edge pseudo elements */
+      min-width: 0;
     }
 
     /* Fade edge to signal scrollability without clipping text */
@@ -279,6 +280,7 @@ import { AudioService } from '../../services/audio.service';
       display: flex;
       flex-direction: column;
       gap: 16px;
+      min-width: 0;
     }
 
     @media (max-width: 959px) {
