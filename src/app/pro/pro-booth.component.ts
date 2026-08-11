@@ -423,8 +423,8 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.isDestroyed = true;
     cancelAnimationFrame(this.animationFrameId);
-    if (this.stream) {
-      this.stream.getTracks().forEach(t => t.stop());
+    if (this.videoRef?.nativeElement) {
+      this.videoRef.nativeElement.srcObject = null;
     }
   }
 }
