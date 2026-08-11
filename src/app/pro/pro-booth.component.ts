@@ -80,7 +80,7 @@ const AR_MASKS: ARMask[] = [
       </div>
     </div>
   `,
-    changeDetection: ChangeDetectionStrategy.Eager,
+
     styles: [`
     .pro-container {
       width: 100%;
