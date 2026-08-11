@@ -320,11 +320,17 @@ import { WebRtcService } from './services/webrtc.service';
     .main-content {
       width: 100%;
       max-width: 1200px;
-      padding: 0 12px;
+      padding: 24px 16px 48px 16px;
       box-sizing: border-box;
       position: relative;
       z-index: 1;
       overflow-x: hidden;
+    }
+    
+    @media (max-width: 959px) {
+      .main-content {
+        padding: 16px 12px 32px 12px;
+      }
     }
 
     .app-header {
