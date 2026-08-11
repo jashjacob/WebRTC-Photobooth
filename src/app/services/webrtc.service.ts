@@ -216,6 +216,7 @@ export class WebRtcService {
   readonly isCapturing = signal<boolean>(false);
   readonly burstIndex = signal<number>(1); // 1..4
   readonly isFlashActive = signal<boolean>(false);
+  readonly appInitialized = signal<boolean>(false);
 
   // Film Strip Settings Signals
   readonly selectedThemeKey = signal<FilmStripThemeKey>('seoul-minimal');
@@ -263,6 +264,7 @@ export class WebRtcService {
       });
 
       this.stream.set(mediaStream);
+      this.appInitialized.set(true);
       this.progressText.set('Camera active! Select countdown and click 4-Shot Burst.');
       this.progressValue.set(25);
     } catch (err: any) {
