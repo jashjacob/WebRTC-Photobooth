@@ -82,6 +82,10 @@ const AR_MASKS: ARMask[] = [
   `,
 
     styles: [`
+    :host {
+      display: block;
+      width: 100%;
+    }
     .pro-container {
       width: 100%;
       max-width: 1200px;
@@ -138,6 +142,7 @@ const AR_MASKS: ARMask[] = [
       display: flex;
       flex-direction: column;
       gap: 16px;
+      min-width: 0;
     }
     .camera-wrapper {
       position: relative;
