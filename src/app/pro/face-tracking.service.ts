@@ -7,10 +7,13 @@ import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 export class FaceTrackingService {
   private faceLandmarker: FaceLandmarker | null = null;
   readonly isReady = signal<boolean>(false);
+  readonly hasFailed = signal<boolean>(false);
+  readonly isLoading = signal<boolean>(false);
 
   async initialize(): Promise<void> {
     if (this.faceLandmarker) return;
 
+    this.isLoading.set(true);
     try {
       // Load WebAssembly binaries from jsdelivr CDN (keeps our bundle small)
       const vision = await FilesetResolver.forVisionTasks(
@@ -28,9 +31,18 @@ export class FaceTrackingService {
       });
 
       this.isReady.set(true);
+      this.isLoading.set(false);
     } catch (e) {
+      this.hasFailed.set(true);
+      this.isLoading.set(false);
       console.error('Failed to initialize Face Landmarker', e);
     }
+  }
+
+  reset(): void {
+    this.hasFailed.set(false);
+    this.isReady.set(false);
+    this.faceLandmarker = null;
   }
 
   detectVideoFrame(video: HTMLVideoElement, timestamp: number) {

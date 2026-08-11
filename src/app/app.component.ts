@@ -104,6 +104,8 @@ import { WebRtcService } from './services/webrtc.service';
           <app-pro-booth #proBooth (onClose)="mode.set('standard')"></app-pro-booth>
         } @loading {
           <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
+        } @error { 
+          <div style="padding:40px; text-align:center; color:#ff6b6b;">⚠️ PRO mode failed to load. <a href="/">Return to standard mode</a></div> 
         }
       }
       }
@@ -234,6 +236,11 @@ import { WebRtcService } from './services/webrtc.service';
 
     .primary-btn.pulse {
       animation: gentlePulse 2s infinite;
+    }
+
+    .primary-btn:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
     }
 
     @keyframes gentlePulse {
@@ -380,6 +387,11 @@ import { WebRtcService } from './services/webrtc.service';
       filter: grayscale(1);
     }
 
+    .pro-mode-btn:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 3px;
+    }
+
     .error-banner {
       background: linear-gradient(135deg, #ff6b6b, #ee5a24);
       color: white;
@@ -457,7 +469,9 @@ export class AppComponent {
       }
       case 'Escape':
         event.preventDefault();
-        this.webrtcService.clearPhotos();
+        if (this.webrtcService.capturedPhotos().length === 0 || confirm('Clear all shots?')) {
+          this.webrtcService.clearPhotos();
+        }
         break;
     }
   }

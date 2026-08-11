@@ -39,8 +39,8 @@ import { AudioService } from '../../services/audio.service';
       @if (webrtcService.capturedPhotos().length > 0) {
         <!-- Theme Selector Swatches -->
         <div class="theme-selector-section">
-          <label class="section-label">🎨 Strip Theme & Border Style:</label>
-          <div class="theme-swatch-grid">
+          <label class="section-label" id="theme-label">🎨 Strip Theme & Border Style:</label>
+          <div class="theme-swatch-grid" aria-labelledby="theme-label">
             @for (themeKey of themeKeys; track themeKey) {
               <button 
                 type="button"
@@ -71,9 +71,10 @@ import { AudioService } from '../../services/audio.service';
           </div>
 
           <div class="checkbox-field-group">
-            <label class="cute-checkbox-label">
+            <label class="cute-checkbox-label" for="includeTimestamp">
               <input 
                 type="checkbox" 
+                id="includeTimestamp"
                 [checked]="webrtcService.includeTimestamp()" 
                 (change)="onToggleTimestamp()" 
               />
@@ -215,6 +216,11 @@ import { AudioService } from '../../services/audio.service';
       cursor: not-allowed;
     }
 
+    .clear-session-btn:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 2px;
+    }
+
     /* Theme Selector */
     .theme-selector-section {
       display: flex;
@@ -261,6 +267,11 @@ import { AudioService } from '../../services/audio.service';
       transform: translateY(-2px);
       border-color: #ff9ebb;
       background: #fff5f7;
+    }
+
+    .theme-chip:focus-visible {
+      outline: 3px solid #ff69b4;
+      outline-offset: 2px;
     }
 
     .theme-chip.active {
@@ -323,7 +334,7 @@ import { AudioService } from '../../services/audio.service';
     .input-field-group input:focus {
       outline: none;
       border-color: #ff9ebb;
-      box-shadow: 0 0 0 3px rgba(255, 158, 187, 0.2);
+      box-shadow: 0 0 0 3px rgba(255,105,180,0.4);
     }
 
     .checkbox-field-group {
@@ -588,6 +599,7 @@ export class FilmStripPreviewComponent {
   }
 
   onClearPhotos(): void {
+    if (!confirm('Clear all 4 shots and start over?')) return;
     this.webrtcService.clearPhotos();
   }
 

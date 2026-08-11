@@ -46,6 +46,11 @@ const AR_MASKS: ARMask[] = [
               <div class="error-banner">
                 ⚠️ Camera access denied. Please allow camera permissions and reload.
               </div>
+            } @else if (faceTracking.hasFailed()) {
+              <div class="ml-error-banner">
+                <p>⚠️ Failed to load AI face tracking model.</p>
+                <button (click)="retryML()">Retry</button>
+              </div>
             } @else if (!faceTracking.isReady()) {
               <div class="loading-overlay">
                 Downloading 5MB AI Models...<br>
@@ -208,15 +213,36 @@ const AR_MASKS: ARMask[] = [
     }
     .error-banner {
       position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(239, 68, 68, 0.9);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(220, 38, 38, 0.9);
       color: white;
       padding: 16px 24px;
       border-radius: 12px;
       text-align: center;
       font-weight: bold;
+    }
+    .ml-error-banner {
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #8b0000;
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
       z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .ml-error-banner button {
+      background: white;
+      color: #8b0000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
     }
     .btn-primary {
       padding: 12px 24px;
@@ -271,6 +297,11 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
       await this.faceTracking.initialize();
       this.renderLoop();
     }
+  }
+
+  async retryML(): Promise<void> {
+    this.faceTracking.reset();
+    await this.faceTracking.initialize();
   }
 
   takeSnapshot() {
