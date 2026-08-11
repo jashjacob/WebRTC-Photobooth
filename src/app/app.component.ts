@@ -311,10 +311,11 @@ import { WebRtcService } from './services/webrtc.service';
     .main-content {
       width: 100%;
       max-width: 1200px;
-      padding: 24px 16px 48px 16px;
+      padding: 0 12px;
       box-sizing: border-box;
       position: relative;
       z-index: 1;
+      overflow-x: hidden;
     }
 
     .app-header {
@@ -395,6 +396,8 @@ import { WebRtcService } from './services/webrtc.service';
       grid-template-columns: 1fr;
       gap: 28px;
       align-items: start;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     @media (min-width: 960px) {

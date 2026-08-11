@@ -147,7 +147,7 @@ import { AudioService } from '../../services/audio.service';
           <div class="empty-strip-hero">
             <div class="hero-graphic">🎞️</div>
             <h3>Your Film Strip Will Appear Here</h3>
-            <p>Start a <strong>4-Shot Burst</strong> on the left to capture your photos and automatically generate your vintage vertical collage!</p>
+            <p>Take a 4-shot burst to generate your film strip</p>
           </div>
         }
       </div>
@@ -205,9 +205,14 @@ import { AudioService } from '../../services/audio.service';
       font-family: 'Nunito', sans-serif;
     }
 
-    .clear-session-btn:hover {
+    .clear-session-btn:hover:not(:disabled) {
       background: #fecaca;
       transform: translateY(-1px);
+    }
+
+    .clear-session-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     /* Theme Selector */
@@ -226,9 +231,11 @@ import { AudioService } from '../../services/audio.service';
     }
 
     .theme-swatch-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      display: flex;
       gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      white-space: nowrap;
     }
 
     .theme-chip {
@@ -247,6 +254,7 @@ import { AudioService } from '../../services/audio.service';
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
       font-family: 'Nunito', sans-serif;
       text-align: left;
+      flex-shrink: 0;
     }
 
     .theme-chip:hover {
@@ -273,8 +281,6 @@ import { AudioService } from '../../services/audio.service';
 
     .theme-text {
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     /* Customization Deck */
