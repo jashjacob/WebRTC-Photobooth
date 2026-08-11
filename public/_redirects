@@ -1,0 +1,3 @@
+# Netlify SPA redirect — send all routes to index.html
+# Netlify serves static assets directly before this rule applies, so no asset 403s
+/*    /index.html   200

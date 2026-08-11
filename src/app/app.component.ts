@@ -20,14 +20,25 @@ import { WebRtcService } from './services/webrtc.service';
       @if (!webrtcService.appInitialized()) {
         <div class="camera-landing-modal">
           <div class="modal-glass-card">
-            <div class="modal-icon">📸</div>
-            <h1 class="modal-title">Welcome to Kawaii Photobooth</h1>
-            <p class="modal-subtitle">To get started, we need access to your camera.</p>
-            <button class="primary-btn pulse" (click)="webrtcService.startCamera()">Allow Camera Access</button>
-            @if (webrtcService.errorMessage()) {
-              <div class="error-banner">
-                ⚠️ {{ webrtcService.errorMessage() }}
+            @if (!webrtcService.errorMessage()) {
+              <div class="modal-icon">📸</div>
+              <h1 class="modal-title">Welcome to Kawaii Photobooth</h1>
+              <p class="modal-subtitle">Snap, filter, and create a vintage film strip — right in your browser.</p>
+              <button class="primary-btn pulse" (click)="webrtcService.startCamera()">Allow Camera Access</button>
+              <p class="modal-hint">We only use your camera locally. No uploads, ever.</p>
+            } @else {
+              <div class="modal-icon">😔</div>
+              <h1 class="modal-title">Camera Not Available</h1>
+              <p class="modal-error-msg">{{ webrtcService.errorMessage() }}</p>
+              <div class="modal-hint-box">
+                <strong>How to fix this:</strong>
+                <ol>
+                  <li>Click the camera 🔒 icon in your browser's address bar.</li>
+                  <li>Select <em>"Allow"</em> for camera access.</li>
+                  <li>Refresh the page and try again.</li>
+                </ol>
               </div>
+              <button class="primary-btn" (click)="webrtcService.startCamera()">🔄 Retry</button>
             }
           </div>
         </div>
@@ -104,6 +115,7 @@ import { WebRtcService } from './services/webrtc.service';
       display: flex;
       flex-direction: column;
       align-items: center;
+      overflow-x: hidden;
       background: linear-gradient(135deg, #fff0f5 0%, #fce4ec 30%, #f3e5f5 60%, #e8eaf6 100%);
       background-attachment: fixed;
       color: #5a4a6a;
@@ -166,10 +178,40 @@ import { WebRtcService } from './services/webrtc.service';
     }
 
     .modal-subtitle {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       opacity: 0.8;
-      margin-bottom: 40px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .modal-hint {
+      margin-top: 16px;
+      font-size: 0.82rem;
+      opacity: 0.5;
+    }
+
+    .modal-error-msg {
+      color: #dc2626;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 20px;
       line-height: 1.5;
+    }
+
+    .modal-hint-box {
+      background: rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 16px 20px;
+      text-align: left;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+    .modal-hint-box ol {
+      margin: 8px 0 0 16px;
+      padding: 0;
     }
 
     .primary-btn {

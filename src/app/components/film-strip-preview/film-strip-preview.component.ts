@@ -15,60 +15,74 @@ import { AudioService } from '../../services/audio.service';
       <div class="card-header">
         <div class="header-text-group">
           <h2>🎞️ Film Strip Studio</h2>
-          <p class="subtitle">Customize theme, caption, and export your 35mm collage</p>
+          <p class="subtitle">
+            @if (webrtcService.capturedPhotos().length === 0) {
+              Take a 4-shot burst to generate your film strip
+            } @else {
+              Customize theme, caption, and export your 35mm collage
+            }
+          </p>
         </div>
         @if (webrtcService.capturedPhotos().length > 0) {
-          <button class="clear-session-btn" (click)="onClearPhotos()" title="Clear and retake photos">
+          <button 
+            class="clear-session-btn" 
+            (click)="onClearPhotos()" 
+            [disabled]="webrtcService.isCapturing()"
+            title="Clear and retake photos"
+          >
             🗑️ Retake
           </button>
         }
       </div>
 
-      <!-- Theme Selector Swatches -->
-      <div class="theme-selector-section">
-        <label class="section-label">🎨 Strip Theme & Border Style:</label>
-        <div class="theme-swatch-grid">
-          @for (themeKey of themeKeys; track themeKey) {
-            <button 
-              type="button"
-              class="theme-chip" 
-              [class.active]="webrtcService.selectedThemeKey() === themeKey"
-              (click)="onSelectTheme(themeKey)"
-              [title]="webrtcService.themes[themeKey].label"
-            >
-              <span class="theme-dot" [style.background-color]="webrtcService.themes[themeKey].bgColor" [style.border-color]="webrtcService.themes[themeKey].frameBorderColor"></span>
-              <span class="theme-text">{{ webrtcService.themes[themeKey].label }}</span>
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- Caption & Date Customization Box -->
-      <div class="customization-deck">
-        <div class="input-field-group">
-          <label for="stripText">✍️ Custom Footer Title:</label>
-          <input 
-            id="stripText" 
-            type="text" 
-            [ngModel]="webrtcService.customFooterText()" 
-            (ngModelChange)="onTextChange($event)"
-            placeholder="e.g. PARTY MEMORIES 2026"
-            maxlength="32"
-          />
+      <!-- Theme Selector & Customization: only visible after capture -->
+      @if (webrtcService.capturedPhotos().length > 0) {
+        <!-- Theme Selector Swatches -->
+        <div class="theme-selector-section">
+          <label class="section-label">🎨 Strip Theme & Border Style:</label>
+          <div class="theme-swatch-grid">
+            @for (themeKey of themeKeys; track themeKey) {
+              <button 
+                type="button"
+                class="theme-chip" 
+                [class.active]="webrtcService.selectedThemeKey() === themeKey"
+                (click)="onSelectTheme(themeKey)"
+                [title]="webrtcService.themes[themeKey].label"
+              >
+                <span class="theme-dot" [style.background-color]="webrtcService.themes[themeKey].bgColor" [style.border-color]="webrtcService.themes[themeKey].frameBorderColor"></span>
+                <span class="theme-text">{{ webrtcService.themes[themeKey].label }}</span>
+              </button>
+            }
+          </div>
         </div>
 
-        <div class="checkbox-field-group">
-          <label class="cute-checkbox-label">
+        <!-- Caption & Date Customization Box -->
+        <div class="customization-deck">
+          <div class="input-field-group">
+            <label for="stripText">✍️ Custom Footer Title:</label>
             <input 
-              type="checkbox" 
-              [checked]="webrtcService.includeTimestamp()" 
-              (change)="onToggleTimestamp()" 
+              id="stripText" 
+              type="text" 
+              [ngModel]="webrtcService.customFooterText()" 
+              (ngModelChange)="onTextChange($event)"
+              placeholder="e.g. PARTY MEMORIES 2026"
+              maxlength="32"
             />
-            <span class="check-box-custom"></span>
-            Include Timestamp
-          </label>
+          </div>
+
+          <div class="checkbox-field-group">
+            <label class="cute-checkbox-label">
+              <input 
+                type="checkbox" 
+                [checked]="webrtcService.includeTimestamp()" 
+                (change)="onToggleTimestamp()" 
+              />
+              <span class="check-box-custom"></span>
+              Include Timestamp
+            </label>
+          </div>
         </div>
-      </div>
+      }
 
       <!-- Burst Progress Indicator Thumbnails (1 to 4) -->
       <div class="burst-slots-panel">
