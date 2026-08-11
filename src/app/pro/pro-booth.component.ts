@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, inject, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FaceTrackingService } from './face-tracking.service';
 import { FilterControlsComponent } from '../components/filter-controls/filter-controls.component';
@@ -19,10 +19,9 @@ const AR_MASKS: ARMask[] = [
 ];
 
 @Component({
-  selector: 'app-pro-booth',
-  standalone: true,
-  imports: [CommonModule, FilterControlsComponent, FilmStripPreviewComponent],
-  template: `
+    selector: 'app-pro-booth',
+    imports: [CommonModule, FilterControlsComponent, FilmStripPreviewComponent],
+    template: `
     <div class="pro-container">
       <header class="app-header">
         <div class="header-badge">😎 AI POWERED</div>
@@ -76,7 +75,8 @@ const AR_MASKS: ARMask[] = [
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .pro-container {
       width: 100%;
       max-width: 1200px;
@@ -262,33 +262,14 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
     this.imgCatEarLeft.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
     this.imgCatEarRight.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="pink" stroke="white" stroke-width="5"/></svg>';
     this.imgCatNose.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M20,25 Q50,50 80,25 Q50,0 20,25" fill="pink"/><path d="M10,25 L-20,15 M10,25 L-20,25 M10,25 L-20,35 M90,25 L120,15 M90,25 L120,25 M90,25 L120,35" stroke="white" stroke-width="6"/></svg>';
-    
-    await this.startCamera();
+    // Camera is already started by global Landing Modal. Just attach the stream.
     if (this.isDestroyed) return;
     
-    await this.faceTracking.initialize();
-    if (this.isDestroyed) return;
-    
-    this.renderLoop();
-  }
-  
-  async startCamera() {
-    try {
-      this.hasCameraError = false;
-      const newStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
-      });
-      if (this.isDestroyed) {
-        newStream.getTracks().forEach(t => t.stop());
-        return;
-      }
-      this.stream = newStream;
+    this.stream = this.webrtcService.stream();
+    if (this.stream && this.videoRef) {
       this.videoRef.nativeElement.srcObject = this.stream;
-    } catch (e) {
-      if (!this.isDestroyed) {
-        this.hasCameraError = true;
-      }
-      console.error('Camera access denied', e);
+      await this.faceTracking.initialize();
+      this.renderLoop();
     }
   }
 
@@ -442,8 +423,8 @@ export class ProBoothComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.isDestroyed = true;
     cancelAnimationFrame(this.animationFrameId);
-    if (this.stream) {
-      this.stream.getTracks().forEach(t => t.stop());
+    if (this.videoRef?.nativeElement) {
+      this.videoRef.nativeElement.srcObject = null;
     }
   }
 }

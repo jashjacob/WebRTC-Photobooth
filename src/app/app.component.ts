@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject, ChangeDetectionStrategy, HostListener, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { CameraPreviewComponent } from './components/camera-preview/camera-preview.component';
 import { FilterControlsComponent } from './components/filter-controls/filter-controls.component';
 import { FilmStripPreviewComponent } from './components/film-strip-preview/film-strip-preview.component';
@@ -7,19 +7,32 @@ import { ProBoothComponent } from './pro/pro-booth.component';
 import { WebRtcService } from './services/webrtc.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    CameraPreviewComponent, 
-    FilterControlsComponent, 
+    selector: 'app-root',
+    imports: [
+    CameraPreviewComponent,
+    FilterControlsComponent,
     FilmStripPreviewComponent,
     ProBoothComponent
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="app-container" [class.pro-theme]="mode() === 'pro'">
-      @if (mode() === 'standard') {
+      @if (!webrtcService.stream()) {
+        <div class="camera-landing-modal">
+          <div class="modal-glass-card">
+            <div class="modal-icon">📸</div>
+            <h1 class="modal-title">Welcome to Kawaii Photobooth</h1>
+            <p class="modal-subtitle">To get started, we need access to your camera.</p>
+            <button class="primary-btn pulse" (click)="webrtcService.startCamera()">Allow Camera Access</button>
+            @if (webrtcService.errorMessage()) {
+              <div class="error-banner">
+                ⚠️ {{ webrtcService.errorMessage() }}
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        @if (mode() === 'standard') {
         <!-- Full Page Studio White Flash Overlay -->
         <div 
           class="full-page-flash-overlay" 
@@ -81,9 +94,10 @@ import { WebRtcService } from './services/webrtc.service';
           <div style="padding: 100px; color: #5a4a6a; font-weight: bold;">Loading Heavy PRO ML Models... (5MB)</div>
         }
       }
+      }
     </div>
   `,
-  styles: [`
+    styles: [`
     .app-container {
       min-height: 100vh;
       display: flex;
@@ -100,11 +114,89 @@ import { WebRtcService } from './services/webrtc.service';
     /* Dynamic Dark Theme for PRO Mode */
     .app-container.pro-theme {
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #171717 100%);
+      color: #e2e8f0;
+    }
+
+    /* Landing Modal */
+    .camera-landing-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.4);
     }
     
-    .app-container.pro-theme::before {
-      background-image: radial-gradient(circle, #00F3FF 1.2px, transparent 1.2px);
-      opacity: 0.05;
+    .app-container.pro-theme .camera-landing-modal {
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 60px 40px;
+      border-radius: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 480px;
+    }
+
+    .app-container.pro-theme .modal-glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-icon {
+      font-size: 5rem;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .modal-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #ff69b4, #9370db);
+      color: white;
+      border: none;
+      padding: 18px 40px;
+      border-radius: 100px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255, 105, 180, 0.4);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 12px 32px rgba(255, 105, 180, 0.6);
+    }
+
+    .primary-btn.pulse {
+      animation: gentlePulse 2s infinite;
+    }
+
+    @keyframes gentlePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
     }
 
     /* Full-Page Studio Flash Overlay (Illuminates face from screen light) */

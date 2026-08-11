@@ -1,13 +1,12 @@
-import { Component, ElementRef, ViewChild, effect, inject, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, effect, inject, OnDestroy, ChangeDetectionStrategy, viewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WebRtcService } from '../../services/webrtc.service';
 
 @Component({
-  selector: 'app-camera-preview',
-  standalone: true,
-  imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-camera-preview',
+    imports: [CommonModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="camera-preview-card">
       <div class="video-container">
         <video 
@@ -48,7 +47,7 @@ import { WebRtcService } from '../../services/webrtc.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .camera-preview-card {
       display: flex;
       justify-content: center;
@@ -64,8 +63,8 @@ import { WebRtcService } from '../../services/webrtc.service';
       background: #111827;
       border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 8px 32px rgba(255, 158, 187, 0.18);
-      border: 2px solid rgba(255, 158, 187, 0.4);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+      border: 4px solid #ffffff;
       contain: layout paint;
     }
 
@@ -77,74 +76,59 @@ import { WebRtcService } from '../../services/webrtc.service';
       /* GPU promotion and horizontal mirror for natural selfie camera view */
       transform: translateZ(0) scaleX(-1);
       backface-visibility: hidden;
+      will-change: transform, filter;
     }
 
-    /* Countdown Overlay */
+    /* Countdown & Badges */
     .countdown-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.35);
-      z-index: 20;
+      align-items: center;
+      background: rgba(0,0,0,0.4);
+      z-index: 10;
     }
 
     .countdown-number {
-      font-size: 7.5rem;
+      font-size: 120px;
       font-weight: 900;
       color: #ffffff;
-      text-shadow: 0 0 25px rgba(255, 158, 187, 0.9), 0 4px 12px rgba(0, 0, 0, 0.6);
-      font-family: 'Nunito', sans-serif;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
 
     .cheese-text {
-      font-size: 3rem;
+      font-size: 80px;
       font-weight: 900;
-      color: #fef08a;
-      text-shadow: 0 0 20px rgba(254, 240, 138, 0.8), 0 4px 8px rgba(0, 0, 0, 0.6);
-      font-family: 'Nunito', sans-serif;
+      color: #ffde00;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .pop-animation {
-      animation: popZoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    @keyframes popZoom {
-      0% {
-        transform: scale(0.2);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
     }
 
-    /* Burst Badge */
+    /* Recording Badge */
     .burst-badge {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      background: linear-gradient(135deg, #ff6b8b, #a855f7);
-      color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 25px;
-      font-size: 0.88rem;
+      top: 12px;
+      right: 12px;
+      background: rgba(220, 38, 38, 0.85);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 12px;
       font-weight: 800;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
       gap: 8px;
-      z-index: 15;
-      box-shadow: 0 4px 14px rgba(255, 107, 139, 0.4);
-      font-family: 'Nunito', sans-serif;
+      z-index: 10;
     }
 
     .pulse-dot {
@@ -179,17 +163,17 @@ import { WebRtcService } from '../../services/webrtc.service';
   `]
 })
 export class CameraPreviewComponent implements OnDestroy {
-  @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
-
+  readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
   readonly webrtcService = inject(WebRtcService);
 
   constructor() {
     effect((onCleanup) => {
       const stream = this.webrtcService.stream();
+      const videoRef = this.videoElement();
       let objectUrl: string | null = null;
 
-      if (this.videoElement && this.videoElement.nativeElement) {
-        const video = this.videoElement.nativeElement;
+      if (videoRef && videoRef.nativeElement) {
+        const video = videoRef.nativeElement;
         if ('srcObject' in video) {
           video.srcObject = stream;
         } else if (stream) {
@@ -213,23 +197,25 @@ export class CameraPreviewComponent implements OnDestroy {
   }
 
   takeSnapshot(): Promise<string | null> {
-    if (this.videoElement) {
-      return this.webrtcService.triggerSingleSnap(this.videoElement.nativeElement);
+    const videoRef = this.videoElement();
+    if (videoRef) {
+      return this.webrtcService.triggerSingleSnap(videoRef.nativeElement);
     }
     return Promise.resolve(null);
   }
 
   startBurst(): Promise<void> {
-    if (this.videoElement) {
-      return this.webrtcService.startBurstCapture(this.videoElement.nativeElement);
+    const videoRef = this.videoElement();
+    if (videoRef) {
+      return this.webrtcService.startBurstCapture(videoRef.nativeElement);
     }
     return Promise.resolve();
   }
 
   ngOnDestroy(): void {
-    this.webrtcService.stopCamera();
-    if (this.videoElement?.nativeElement) {
-      this.videoElement.nativeElement.srcObject = null;
+    const videoRef = this.videoElement();
+    if (videoRef?.nativeElement) {
+      videoRef.nativeElement.srcObject = null;
     }
   }
 }

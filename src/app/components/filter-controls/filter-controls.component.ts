@@ -1,14 +1,13 @@
 import { Component, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { WebRtcService } from '../../services/webrtc.service';
 import { AudioService } from '../../services/audio.service';
 
 @Component({
-  selector: 'app-filter-controls',
-  standalone: true,
-  imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-filter-controls',
+    imports: [],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="controls-container">
       
       <!-- 1. Horizontal Live Filter Picker Carousel -->
@@ -142,7 +141,7 @@ import { AudioService } from '../../services/audio.service';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .controls-container {
       margin-top: 14px;
       display: flex;
