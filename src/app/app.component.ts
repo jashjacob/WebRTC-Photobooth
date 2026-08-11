@@ -59,7 +59,8 @@ import { WebRtcService } from './services/webrtc.service';
             <button 
               class="pro-mode-btn" 
               (click)="mode.set('pro')"
-              [disabled]="webrtcService.isCapturing()"
+              [disabled]="webrtcService.isCapturing() || !webrtcService.isStreaming()"
+              [title]="!webrtcService.isStreaming() ? 'Start camera first to use PRO masks' : ''"
             >Try PRO AR Masks 😎</button>
           </header>
 
