@@ -81,8 +81,7 @@ import { AudioService } from '../../services/audio.service';
               <button 
                 class="mini-btn stop-cam-btn" 
                 (click)="webrtcService.stopCamera()"
-                [disabled]="webrtcService.isCapturing()"
-                title="Stop Camera Stream"
+                title="Stop Camera (also aborts capture)"
               >
                 🛑 Stop
               </button>
@@ -162,6 +161,21 @@ import { AudioService } from '../../services/audio.service';
       padding: 12px 14px;
       border: 1px solid rgba(255, 158, 187, 0.4);
       box-shadow: 0 6px 20px rgba(255, 158, 187, 0.12);
+      position: relative; /* for fade-edge pseudo elements */
+    }
+
+    /* Fade edge to signal scrollability without clipping text */
+    .filter-carousel-section::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 48px;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+      border-radius: 0 20px 20px 0;
+      pointer-events: none;
+      z-index: 1;
     }
 
     .section-title-row {
@@ -194,8 +208,11 @@ import { AudioService } from '../../services/audio.service';
       gap: 8px;
       overflow-x: auto;
       padding-bottom: 6px;
+      padding-right: 48px; /* room for fade edge */
       scrollbar-width: thin;
       scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
 
     .filter-chip {
@@ -215,6 +232,8 @@ import { AudioService } from '../../services/audio.service';
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
       flex-shrink: 0;
       font-family: 'Nunito', sans-serif;
+      scroll-snap-align: start;
+      max-width: 140px; /* prevent any runaway widths */
     }
 
     .filter-chip:hover:not(:disabled) {
@@ -240,10 +259,10 @@ import { AudioService } from '../../services/audio.service';
       font-size: 1rem;
     }
 
-    /* 2. Shutter Console Card */
+    /* 2. Shutter Console Card - sticky on mobile so always reachable */
     .shutter-console-card {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
       border-radius: 24px;
       padding: 16px 20px;
       border: 1px solid rgba(255, 158, 187, 0.4);
@@ -251,6 +270,18 @@ import { AudioService } from '../../services/audio.service';
       display: flex;
       flex-direction: column;
       gap: 16px;
+    }
+
+    @media (max-width: 959px) {
+      .shutter-console-card {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        box-shadow: 0 -4px 24px rgba(255, 158, 187, 0.25);
+        margin: 0 -4px; /* bleed to edges on narrow screens */
+      }
     }
 
     .console-top-row {
