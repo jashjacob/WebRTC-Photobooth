@@ -206,7 +206,17 @@ export class QrModalComponent {
     this.onClose.emit();
   }
 
-  copyLink(inputEl: HTMLInputElement) {
+  async copyLink(inputEl: HTMLInputElement) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(inputEl.value);
+        this.copied = true;
+        setTimeout(() => this.copied = false, 2000);
+        return;
+      } catch (e) {
+        // Fallback to select + execCommand below
+      }
+    }
     inputEl.select();
     document.execCommand('copy');
     this.copied = true;

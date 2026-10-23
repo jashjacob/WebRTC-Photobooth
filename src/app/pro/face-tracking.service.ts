@@ -27,7 +27,7 @@ export class FaceTrackingService {
     try {
       // Load WebAssembly binaries from jsdelivr CDN (keeps our bundle small)
       const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm'
       );
 
       this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
