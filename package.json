@@ -19,8 +19,6 @@
     "@angular/platform-browser-dynamic": "^22.2.3",
     "@angular/router": "^22.2.3",
     "@mediapipe/tasks-vision": "^1.0.1",
-    "@netlify/blobs": "^11.0.1",
-    "@netlify/functions": "^6.0.0",
     "canvas-confetti": "^1.9.4",
     "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",

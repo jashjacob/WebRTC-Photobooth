@@ -1,8 +1,6 @@
 # ✨ Kawaii WebRTC Photobooth ✨
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/e77881c2-022b-4501-8378-e7c65ff2233c/deploy-status)](https://app.netlify.com/projects/phtbth/deploys)
-
-A modern, aesthetic WebRTC photobooth built with **Angular 18**, **HTML5 Canvas**, and **Web Audio API**. Snap single shots or trigger a 4-photo burst session to generate vintage vertical film strip collages with customizable themes and live filters!
+A modern, aesthetic WebRTC photobooth built with **Angular**, **HTML5 Canvas**, and **Web Audio API**. Snap single shots or trigger a 4-photo burst session to generate vintage vertical film strip collages with customizable themes and live filters!
 
 ---
 
@@ -41,11 +39,10 @@ Navigate to `http://localhost:4200` in your browser.
 
 ## 🛠️ Tech Stack
 
-- **Framework:** Angular 18+ (Standalone Components, Signals)
+- **Framework:** Angular (Standalone Components, Signals)
 - **Video Capture:** WebRTC `MediaDevices.getUserMedia`
 - **Graphics & Rendering:** HTML5 2D Canvas & CSS3 Filters
 - **Sound Engine:** Web Audio API Oscillator synthesis
-- **Hosting / CI/CD:** Netlify
 
 ---
 

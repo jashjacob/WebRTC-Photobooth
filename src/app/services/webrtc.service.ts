@@ -939,7 +939,7 @@ export class WebRtcService {
   }
 
   /**
-   * Upload film strip to Netlify Blobs via serverless function
+   * Upload film strip via serverless function
    */
   async uploadFilmStrip(dataUrl: string): Promise<string> {
     const response = await fetch('/api/upload', {
